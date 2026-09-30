@@ -7,7 +7,7 @@ linkPerformance(sim);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setClearColor(0x1a1411, 1);
+renderer.setClearColor(0x0c0b0a, 1);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 document.getElementById("app").appendChild(renderer.domElement);
 
@@ -17,7 +17,7 @@ camera.position.z = 10;
 
 const page = new THREE.Mesh(
   new THREE.PlaneGeometry(14.5, 8.1),
-  new THREE.MeshBasicMaterial({ map: makePageTexture() }),
+  new THREE.MeshBasicMaterial({ map: makePageTexture(), alphaTest: 0.4 }),
 );
 page.position.z = -0.12;
 scene.add(page);
@@ -167,8 +167,8 @@ function resize() {
 }
 
 function writeTrail() {
-    const warm = [140, 62, 24];
-    const cold = [28, 120, 132];
+    const warm = [36, 28, 22];
+    const cold = [48, 32, 92];
     const t = agrioMix;
     for (let i = 0; i < sim.trail.length; i++) {
       const value = Math.min(1, sim.trail[i] * 1.35);
@@ -183,7 +183,7 @@ function writeTrail() {
 }
 
 function updatePieces() {
-  const cyan = [0.28, 0.7, 0.74];
+  const cyan = [0.42, 0.22, 0.55];
   buckets.forEach((list, kind) => {
     const mesh = meshes[kind];
     if (!mesh) return;
@@ -206,16 +206,19 @@ function updatePieces() {
     mesh.instanceMatrix.needsUpdate = true;
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
   });
-  grain.style.opacity = String(0.12 + agrioMix * 0.16);
+  grain.style.opacity = String(0.42 + agrioMix * 0.2);
 }
 
 function drawGrain() {
   const data = grainImage.data;
   for (let i = 0; i < data.length; i += 4) {
-    const n = 118 + Math.random() * 80;
+    const roll = Math.random();
+    let n = 70 + Math.random() * 50;
+    if (roll > 0.982) n = 12;
+    else if (roll > 0.965) n = 210;
     data[i] = n;
-    data[i + 1] = n * 0.96;
-    data[i + 2] = n * 0.9;
+    data[i + 1] = n * 0.92;
+    data[i + 2] = n * 0.84;
     data[i + 3] = 255;
   }
   grainCtx.putImageData(grainImage, 0, 0);
@@ -234,7 +237,7 @@ function hudHtml() {
     <p>Escala ${scaleWord} (${sim.noiseScale.toFixed(2)})</p>
     <p>Pegamento ${word(sim.physWeight)} (${sim.physWeight.toFixed(2)}) — ${memory}</p>
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
-    <p>Agrio ${sim.agrio ? "sí: ángulos quebrados, copia fría" : "no: ángulos suaves, colores cálidos"}</p>
+    <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
     <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: Z agrio · R otro campo · C borrar mancha · clic aparta · F pantalla · H ocultar</p>
   `;
@@ -292,24 +295,49 @@ function makePageTexture() {
   canvas.width = 640;
   canvas.height = 360;
   const g = canvas.getContext("2d");
-  g.fillStyle = "#f3e6c8";
+  g.fillStyle = "#7d7364";
   g.fillRect(0, 0, canvas.width, canvas.height);
+  const stains = [
+    ["rgba(48, 32, 22, 0.42)", 110, 210, 150, 86],
+    ["rgba(28, 26, 24, 0.38)", 430, 80, 170, 96],
+    ["rgba(62, 44, 30, 0.3)", 300, 250, 210, 64],
+    ["rgba(20, 18, 16, 0.28)", 70, 48, 96, 46],
+    ["rgba(55, 48, 36, 0.34)", 520, 240, 120, 70],
+  ];
+  for (const stain of stains) {
+    g.fillStyle = stain[0];
+    g.beginPath();
+    g.ellipse(stain[1], stain[2], stain[3], stain[4], 0.5, 0, Math.PI * 2);
+    g.fill();
+  }
+  g.strokeStyle = "rgba(28, 22, 16, 0.45)";
+  g.lineWidth = 3;
+  g.beginPath();
+  g.moveTo(0, 148);
+  g.bezierCurveTo(180, 132, 420, 188, 640, 156);
+  g.stroke();
+  g.strokeStyle = "rgba(36, 24, 64, 0.55)";
+  g.lineWidth = 4;
+  g.beginPath();
+  g.moveTo(36, 36);
+  g.quadraticCurveTo(110, 8, 78, 92);
+  g.quadraticCurveTo(48, 150, 140, 110);
+  g.stroke();
   const image = g.getImageData(0, 0, canvas.width, canvas.height);
-  for (let i = 0; i < image.data.length; i += 4) {
-    const n = (Math.random() - 0.5) * 16;
-    image.data[i] += n;
-    image.data[i + 1] += n * 0.85;
-    image.data[i + 2] += n * 0.5;
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const pixel = (y * canvas.width + x) * 4;
+      const n = (hash(x, y) - 0.5) * 48;
+      image.data[pixel] = clampByte(image.data[pixel] + n);
+      image.data[pixel + 1] = clampByte(image.data[pixel + 1] + n * 0.85);
+      image.data[pixel + 2] = clampByte(image.data[pixel + 2] + n * 0.65);
+      const u = x / (canvas.width - 1);
+      const v = y / (canvas.height - 1);
+      const edge = Math.min(u, 1 - u, v, 1 - v) + (hash(x * 3, y) - 0.5) * 0.09;
+      image.data[pixel + 3] = edge < 0.03 ? 0 : 255;
+    }
   }
   g.putImageData(image, 0, 0);
-  g.fillStyle = "rgba(196, 140, 70, 0.16)";
-  g.beginPath();
-  g.ellipse(180, 210, 90, 54, -0.4, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = "rgba(120, 90, 60, 0.08)";
-  g.beginPath();
-  g.ellipse(460, 120, 70, 40, 0.5, 0, Math.PI * 2);
-  g.fill();
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.premultiplyAlpha = false;
@@ -321,8 +349,12 @@ function makeCutoutTexture(kind) {
   canvas.width = 256;
   canvas.height = 256;
   const g = canvas.getContext("2d");
-  g.fillStyle = "#ffffff";
+  g.fillStyle = "#c4b8a4";
   g.fillRect(0, 0, 256, 256);
+  g.fillStyle = "rgba(40, 28, 20, 0.18)";
+  g.beginPath();
+  g.ellipse(70 + kind * 18, 180 - kind * 12, 80, 46, 0.4, 0, Math.PI * 2);
+  g.fill();
   if (kind === 1) paintStripes(g);
   if (kind === 2) paintHalftone(g);
   if (kind === 3) paintNewsprint(g);
@@ -333,17 +365,23 @@ function makeCutoutTexture(kind) {
       const pixel = (y * 256 + x) * 4;
       const u = x / 255;
       const v = y / 255;
-      const fiber = (hash(x, y) - 0.5) * 18;
-      image.data[pixel] += fiber;
-      image.data[pixel + 1] += fiber;
-      image.data[pixel + 2] += fiber * 0.7;
+      const fiber = (hash(x, y) - 0.5) * 36;
+      image.data[pixel] = clampByte(image.data[pixel] + fiber);
+      image.data[pixel + 1] = clampByte(image.data[pixel + 1] + fiber * 0.8);
+      image.data[pixel + 2] = clampByte(image.data[pixel + 2] + fiber * 0.55);
+      if (x < 14) {
+        image.data[pixel + 2] = clampByte(image.data[pixel + 2] + 40);
+        image.data[pixel] = clampByte(image.data[pixel] - 18);
+      }
       let alpha = 255;
-      const edge = Math.min(u, 1 - u, v, 1 - v) + (hash(x * 2, y * 3) - 0.5) * 0.045;
-      if (edge < 0.04) alpha = 0;
+      const edge = Math.min(u, 1 - u, v, 1 - v) + (hash(x * 2, y * 3) - 0.5) * 0.14;
+      if (edge < 0.08) alpha = 0;
+      if (hash(x * 9, y * 4) > 0.985 && edge < 0.22) alpha = 0;
       if (kind === 2) {
         const dx = u - 0.5;
         const dy = v - 0.5;
-        const rim = 0.46 + Math.sin(Math.atan2(dy, dx) * 14) * 0.016;
+        const angle = Math.atan2(dy, dx);
+        const rim = 0.4 + Math.sin(angle * 5) * 0.07 + (hash(x, y) - 0.5) * 0.08;
         if (Math.hypot(dx, dy) > rim) alpha = 0;
       }
       image.data[pixel + 3] = alpha;
@@ -357,46 +395,58 @@ function makeCutoutTexture(kind) {
 }
 
 function paintStripes(g) {
+  g.fillStyle = "#5c5040";
+  g.fillRect(0, 0, 256, 256);
   g.save();
   g.translate(128, 128);
-  g.rotate(-0.7);
-  for (let x = -280; x < 280; x += 22) {
-    g.fillStyle = (x / 22) % 2 === 0 ? "rgba(40, 24, 16, 0.38)" : "rgba(255, 248, 230, 0.55)";
-    g.fillRect(x, -280, 11, 560);
+  g.rotate(-0.08);
+  for (let y = -220; y < 220; y += 34) {
+    g.fillStyle = Math.abs(y) % 68 < 20 ? "rgba(24, 18, 12, 0.72)" : "rgba(150, 132, 86, 0.28)";
+    g.fillRect(-240, y, 480, 14);
   }
   g.restore();
 }
 
 function paintHalftone(g) {
-  for (let y = 10; y < 256; y += 11) {
-    for (let x = 10; x < 256; x += 11) {
-      if (hash(x, y) > 0.42) {
-        g.fillStyle = "rgba(30, 18, 12, 0.4)";
+  for (let y = 8; y < 256; y += 14) {
+    for (let x = 8; x < 256; x += 14) {
+      if (hash(x, y) > 0.28) {
+        g.fillStyle = "rgba(20, 14, 12, 0.62)";
         g.beginPath();
-        g.arc(x, y, 2.3, 0, Math.PI * 2);
+        g.arc(x + (hash(y, x) - 0.5) * 4, y, 3.4, 0, Math.PI * 2);
         g.fill();
       }
     }
   }
+  g.strokeStyle = "rgba(20, 14, 12, 0.7)";
+  g.lineWidth = 6;
+  g.strokeRect(28, 36, 180, 150);
 }
 
 function paintNewsprint(g) {
-  g.fillStyle = "rgba(20, 12, 8, 0.82)";
-  g.fillRect(22, 28, 150, 26);
-  g.fillStyle = "rgba(20, 12, 8, 0.55)";
-  for (let y = 70; y < 230; y += 10) {
-    const inset = 22 + Math.floor(hash(0, y) * 18);
-    g.fillRect(inset, y, 120 + Math.floor(hash(y, 3) * 70), 3);
+  g.fillStyle = "rgba(16, 12, 10, 0.9)";
+  g.fillRect(12, 18, 168, 34);
+  g.fillStyle = "rgba(16, 12, 10, 0.72)";
+  for (let y = 64; y < 240; y += 9) {
+    const inset = 8 + Math.floor(hash(0, y) * 36);
+    const width = 70 + Math.floor(hash(y, 3) * 150);
+    g.fillRect(inset, y, width, hash(y, 8) > 0.7 ? 5 : 2);
   }
+  g.fillStyle = "rgba(48, 28, 78, 0.45)";
+  g.fillRect(150, 150, 80, 48);
 }
 
 function paintPhoto(g) {
-  g.fillStyle = "#6a635c";
-  g.fillRect(28, 28, 200, 200);
-  g.fillStyle = "rgba(255, 255, 255, 0.28)";
-  g.beginPath();
-  g.arc(96, 96, 36, 0, Math.PI * 2);
-  g.fill();
-  g.fillStyle = "rgba(40, 30, 28, 0.35)";
-  g.fillRect(48, 150, 150, 46);
+  g.fillStyle = "#1c1916";
+  g.fillRect(0, 0, 256, 256);
+  g.fillStyle = "#b7b1a6";
+  g.fillRect(16, 22, 214, 148);
+  g.fillStyle = "rgba(255, 252, 246, 0.72)";
+  g.fillRect(48, 40, 96, 78);
+  g.fillStyle = "rgba(12, 10, 9, 0.78)";
+  g.fillRect(10, 168, 236, 78);
+}
+
+function clampByte(value) {
+  return Math.max(0, Math.min(255, value));
 }

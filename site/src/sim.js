@@ -10,18 +10,20 @@ import { seedNoise, simplex2 } from "./noise.js";
 // Mano: no es un jefe. Dobla el campo cerca del cursor.
 //       Sin clic, deja pegamento. Con clic, el campo apunta hacia afuera.
 
+// Polvo, ladrillo, zinc, nicotina, grasa. El rosa y el violeta de fotocopia son escasos.
 export const PALETTE = [
-  [0.93, 0.58, 0.18],
-  [0.96, 0.76, 0.28],
-  [0.91, 0.52, 0.56],
-  [0.97, 0.92, 0.84],
-  [0.76, 0.2, 0.22],
-  [0.27, 0.6, 0.62],
-  [0.2, 0.14, 0.12],
-  [0.48, 0.62, 0.4],
+  [0.48, 0.28, 0.2],
+  [0.55, 0.46, 0.26],
+  [0.58, 0.34, 0.38],
+  [0.66, 0.6, 0.46],
+  [0.42, 0.14, 0.13],
+  [0.32, 0.28, 0.48],
+  [0.14, 0.12, 0.1],
+  [0.34, 0.38, 0.28],
+  [0.4, 0.38, 0.35],
 ];
 
-const WARM = [0, 0, 1, 1, 2, 2, 3, 3, 4, 7, 7];
+const DIRT = [0, 0, 1, 1, 3, 3, 6, 6, 7, 8, 8, 8, 4, 2, 5];
 
 export function createSim(options = {}) {
   const seed = options.seed ?? 20250310;
@@ -80,17 +82,20 @@ function makeAgent(sim) {
   let sx = size;
   let sy = size * lerp(0.72, 1.15, rand(sim));
   if (kind === 1) {
-    sx = size * 1.9;
-    sy = size * 0.34;
+    sx = size * lerp(1.4, 2.4, rand(sim));
+    sy = size * lerp(0.22, 0.55, rand(sim));
   } else if (kind === 2) {
-    sx = size;
-    sy = size;
+    sx = size * lerp(0.7, 1.3, rand(sim));
+    sy = size * lerp(0.65, 1.25, rand(sim));
   } else if (kind === 3) {
-    sx = size * 1.35;
-    sy = size * 0.9;
+    sx = size * lerp(1.1, 1.8, rand(sim));
+    sy = size * lerp(0.7, 1.3, rand(sim));
+  } else {
+    sx *= lerp(0.7, 1.5, rand(sim));
+    sy *= lerp(0.55, 1.4, rand(sim));
   }
 
-  const colorIndex = rand(sim) < 0.14 ? 5 : WARM[Math.floor(rand(sim) * WARM.length)];
+  const colorIndex = DIRT[Math.floor(rand(sim) * DIRT.length)];
   return {
     x: rand(sim) * sim.w,
     y: rand(sim) * sim.h,
@@ -103,7 +108,7 @@ function makeAgent(sim) {
     sy,
     z: 0.02 + rand(sim) * 0.38,
     rot: rand(sim) * Math.PI * 2,
-    spin: (rand(sim) - 0.5) * 0.35,
+    spin: (rand(sim) - 0.5) * 0.85,
     kind,
     colorIndex,
     neighbors: 0,

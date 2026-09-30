@@ -3,7 +3,7 @@ body,
 #app {
   margin: 0;
   height: 100%;
-  background: #1a1411;
+  background: #0c0b0a;
   overflow: hidden;
 }
 
@@ -23,8 +23,22 @@ body,
   height: 100%;
   z-index: 2;
   pointer-events: none;
-  opacity: 0.12;
-  mix-blend-mode: overlay;
+  opacity: 0.42;
+  mix-blend-mode: multiply;
+}
+
+#flare {
+  position: fixed;
+  top: -8%;
+  left: 22%;
+  width: 5vw;
+  height: 120%;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(230, 226, 214, 0.28), transparent);
+  filter: blur(6px);
+  mix-blend-mode: screen;
+  transform: rotate(1.5deg);
 }
 
 #vignette {
@@ -32,41 +46,45 @@ body,
   inset: 0;
   z-index: 3;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 48%, rgba(10, 7, 5, 0.42) 100%);
+  background: radial-gradient(ellipse at center, transparent 36%, rgba(6, 5, 4, 0.72) 100%);
 }
 
 #hud {
   position: fixed;
-  left: 1rem;
-  bottom: 1rem;
+  left: 0.8rem;
+  bottom: 0.85rem;
   z-index: 4;
   max-width: 34rem;
-  padding: 0.7rem 0.9rem 0.75rem;
-  background: rgba(22, 15, 12, 0.78);
-  color: #f6ecd8;
-  font-family: Palatino, "Palatino Linotype", "Iowan Old Style", serif;
-  font-size: 15px;
-  line-height: 1.4;
+  padding: 0.65rem 0.8rem 0.7rem;
+  background: #b6a27a;
+  color: #16110c;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  line-height: 1.35;
+  transform: rotate(-1.4deg);
+  border: 1px solid #241910;
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.45);
 }
 
 #hud p {
-  margin: 0 0 0.18rem;
+  margin: 0 0 0.16rem;
 }
 
 #hud .title {
-  font-size: 1.15rem;
-  letter-spacing: 0.04em;
-  margin-bottom: 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: 0.28rem;
+  text-transform: uppercase;
 }
 
 #hud .see {
-  margin-top: 0.45rem;
+  margin-top: 0.4rem;
 }
 
 #hud .keys {
-  margin-top: 0.4rem;
-  font-size: 13px;
-  opacity: 0.86;
+  margin-top: 0.35rem;
+  font-size: 12px;
 }
 
 #hud.hidden {
