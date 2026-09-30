@@ -6,12 +6,24 @@ Los recortes son agentes. No hay un jefe ni una secuencia atada a la canción. L
 
 ## Cómo abrirlo
 
+La versión para probar está en GitHub Pages:
+
+https://cognitivearia.github.io/Physarium-exploration-1/
+
+`F` pone la página en pantalla completa. `H` oculta el texto.
+
+Para trabajar en local:
+
 ```bash
 npm install
 npm run dev
 ```
 
-Abre la dirección que muestra la terminal. `F` pone la página en pantalla completa. `H` oculta el texto.
+Después de un cambio, vuelve a construir y sube la carpeta `docs`. Pages publica esa carpeta:
+
+```bash
+npm run build
+```
 
 ## Qué hace cada gesto
 

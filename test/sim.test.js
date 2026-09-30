@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { angleAt, countNeighbors, createSim, sampleTrail, step } from "../src/sim.js";
+import { angleAt, countNeighbors, createSim, sampleTrail, step } from "../site/src/sim.js";
 
 const dt = 1 / 60;
 
