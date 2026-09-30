@@ -167,18 +167,18 @@ function resize() {
 }
 
 function writeTrail() {
-  const warm = [186, 96, 42];
-  const cold = [46, 148, 156];
-  const t = agrioMix;
-  for (let i = 0; i < sim.trail.length; i++) {
-    const value = Math.min(1, sim.trail[i]);
-    const alpha = Math.pow(value, 0.58);
-    const pixel = i * 4;
-    trailData[pixel] = warm[0] + (cold[0] - warm[0]) * t;
-    trailData[pixel + 1] = warm[1] + (cold[1] - warm[1]) * t;
-    trailData[pixel + 2] = warm[2] + (cold[2] - warm[2]) * t;
-    trailData[pixel + 3] = Math.floor(alpha * 220);
-  }
+    const warm = [140, 62, 24];
+    const cold = [28, 120, 132];
+    const t = agrioMix;
+    for (let i = 0; i < sim.trail.length; i++) {
+      const value = Math.min(1, sim.trail[i] * 1.35);
+      const alpha = Math.pow(value, 0.42);
+      const pixel = i * 4;
+      trailData[pixel] = warm[0] + (cold[0] - warm[0]) * t;
+      trailData[pixel + 1] = warm[1] + (cold[1] - warm[1]) * t;
+      trailData[pixel + 2] = warm[2] + (cold[2] - warm[2]) * t;
+      trailData[pixel + 3] = Math.floor(alpha * 235);
+    }
   trailTexture.needsUpdate = true;
 }
 

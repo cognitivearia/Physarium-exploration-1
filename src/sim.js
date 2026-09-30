@@ -42,7 +42,7 @@ export function createSim(options = {}) {
     sensorDist: 0.78,
     sensorAngle: 0.62,
     rotationSpeed: 3.6,
-    deposit: 0.42,
+    deposit: 0.85,
     agrio: false,
     fieldSeed: seed >>> 0,
     rng: seed >>> 0,
