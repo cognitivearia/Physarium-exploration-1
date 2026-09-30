@@ -19,11 +19,7 @@ npm install
 npm run dev
 ```
 
-Después de un cambio, vuelve a construir y sube la carpeta `docs`. Pages publica esa carpeta:
-
-```bash
-npm run build
-```
+Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza esa dirección.
 
 ## Qué hace cada gesto
 

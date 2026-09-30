@@ -1,10 +1,9 @@
 import { defineConfig } from "vite";
 
-// GitHub Pages publica la rama main desde la raíz del repo.
-// El sitio construido vive en /docs, así que las rutas llevan ese prefijo.
+// La acción de GitHub Pages publica la carpeta docs como raíz del sitio.
 export default defineConfig({
   root: "site",
-  base: "/Physarium-exploration-1/docs/",
+  base: "/Physarium-exploration-1/",
   build: {
     outDir: "../docs",
     emptyOutDir: true,
