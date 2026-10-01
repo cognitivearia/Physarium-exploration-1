@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { angleAt, countNeighbors, createSim, sampleTrail, step } from "../site/src/sim.js";
+import { angleAt, countNeighbors, createSim, moldGlance, sampleTrail, step } from "../site/src/sim.js";
 
 const dt = 1 / 60;
 
@@ -103,12 +103,26 @@ test("el moho gira hacia la mancha más fuerte", () => {
   mold.x = 8;
   mold.y = 4.5;
   mold.heading = 0;
-  const leftX = mold.x + Math.cos(sim.sensorAngle) * sim.sensorDist;
-  const leftY = mold.y + Math.sin(sim.sensorAngle) * sim.sensorDist;
+  const look = moldGlance(sim, mold);
+  const leftX = mold.x + Math.cos(look.sa) * look.sd;
+  const leftY = mold.y + Math.sin(look.sa) * look.sd;
   paint(sim, leftX, leftY);
   const before = mold.heading;
   step(sim, dt);
   assert.ok(mold.heading > before, `heading ${before} -> ${mold.heading}`);
+});
+
+test("la tinta local acorta el sensor de los nudos", () => {
+  const sim = createSim({ count: 0, moldCount: 1, moldPoint: 1, seed: 12 });
+  const mold = sim.mold[0];
+  mold.x = 8;
+  mold.y = 4.5;
+  mold.heading = 0;
+  const bare = moldGlance(sim, mold).sd;
+  const px = sim.w / sim.cols;
+  paint(sim, mold.x + 2 * px, mold.y);
+  const fed = moldGlance(sim, mold).sd;
+  assert.ok(fed < bare - px * 0.5, `bare ${bare} fed ${fed}`);
 });
 
 test("el clic abre un hueco en la mancha", () => {

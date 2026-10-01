@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { PALETTE, clearTrail, createSim, rebuildField, reseedField, step } from "./sim.js";
+import { MOLD_POINTS, PALETTE, clearTrail, createSim, rebuildField, reseedField, step } from "./sim.js";
 
 const sim = createSim();
 linkPerformance(sim);
@@ -25,8 +25,8 @@ scene.add(page);
 const trailData = new Uint8Array(sim.cols * sim.rows * 4);
 const trailTexture = new THREE.DataTexture(trailData, sim.cols, sim.rows, THREE.RGBAFormat);
 trailTexture.colorSpace = THREE.SRGBColorSpace;
-trailTexture.magFilter = THREE.LinearFilter;
-trailTexture.minFilter = THREE.LinearFilter;
+trailTexture.magFilter = THREE.NearestFilter;
+trailTexture.minFilter = THREE.NearestFilter;
 trailTexture.needsUpdate = true;
 
 const trail = new THREE.Mesh(
@@ -137,6 +137,7 @@ function onKeyDown(event) {
   if (key === "c" && !event.repeat) clearTrail(sim);
   if (key === "h" && !event.repeat) hud.classList.toggle("hidden");
   if (key === "f" && !event.repeat) toggleFullscreen();
+  if ("1234".includes(key) && !event.repeat) sim.moldPoint = Number(key) - 1;
 }
 
 function onPointer(event) {
@@ -171,7 +172,7 @@ function writeTrail() {
   const t = agrioMix;
   for (let i = 0; i < sim.trail.length; i++) {
     const value = Math.min(1, sim.trail[i]);
-    const shown = value < 0.018 ? 0 : Math.pow((value - 0.018) / 0.982, 0.32);
+    const shown = value < 0.04 ? 0 : Math.pow((value - 0.04) / 0.96, 0.85);
     const pixel = i * 4;
     const grease = 10 + (1 - shown) * 14;
     const r = grease * 1.25;
@@ -236,6 +237,7 @@ function hudHtml() {
   return `
     <p class="title">MALUCA — recortes</p>
     <p>La canción va en otra ventana. Este instrumento no la escucha.</p>
+    <p>Moho ${MOLD_POINTS[sim.moldPoint].name} — 1 red · 2 nudos · 3 cordones · 4 ramas</p>
     <p>La mano hace crecer el moho. El clic lo aparta.</p>
     <p>Campo ${word(sim.flowWeight)} (${sim.flowWeight.toFixed(2)}) — las curvas del recuerdo</p>
     <p>Escala ${scaleWord} (${sim.noiseScale.toFixed(2)})</p>
@@ -243,7 +245,7 @@ function hudHtml() {
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
     <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
-    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: Z agrio · R otro campo · C borrar mancha · clic aparta · F pantalla · H ocultar</p>
+    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: 1–4 moho · Z agrio · R otro campo · C borrar mancha · clic aparta · F pantalla · H ocultar</p>
   `;
 }
 
