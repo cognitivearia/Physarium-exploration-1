@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { angleAt, countNeighbors, createSim, moldGlance, sampleTrail, step } from "../site/src/sim.js";
+import { angleAt, countNeighbors, createSim, moldGlance, sampleTrail, setMoldPoint, step } from "../site/src/sim.js";
 
 const dt = 1 / 60;
 
@@ -99,30 +99,40 @@ test("agrio cuaja el ángulo del campo en pasos de 45 grados", () => {
 
 test("el moho gira hacia la mancha más fuerte", () => {
   const sim = createSim({ count: 0, moldCount: 1, seed: 9 });
-  const mold = sim.mold[0];
-  mold.x = 8;
-  mold.y = 4.5;
-  mold.heading = 0;
-  const look = moldGlance(sim, mold);
-  const leftX = mold.x + Math.cos(look.sa) * look.sd;
-  const leftY = mold.y + Math.sin(look.sa) * look.sd;
+  sim.moldX[0] = 8;
+  sim.moldY[0] = 4.5;
+  sim.moldH[0] = 0;
+  const look = moldGlance(sim, 0);
+  const leftX = 8 + Math.cos(look.sa) * look.sd;
+  const leftY = 4.5 + Math.sin(look.sa) * look.sd;
   paint(sim, leftX, leftY);
-  const before = mold.heading;
+  const before = sim.moldH[0];
   step(sim, dt);
-  assert.ok(mold.heading > before, `heading ${before} -> ${mold.heading}`);
+  assert.ok(sim.moldH[0] > before, `heading ${before} -> ${sim.moldH[0]}`);
 });
 
 test("la tinta local acorta el sensor de los nudos", () => {
   const sim = createSim({ count: 0, moldCount: 1, moldPoint: 1, seed: 12 });
-  const mold = sim.mold[0];
-  mold.x = 8;
-  mold.y = 4.5;
-  mold.heading = 0;
-  const bare = moldGlance(sim, mold).sd;
+  sim.moldX[0] = 8;
+  sim.moldY[0] = 4.5;
+  sim.moldH[0] = 0;
+  const bare = moldGlance(sim, 0).sd;
   const px = sim.w / sim.cols;
-  paint(sim, mold.x + 2 * px, mold.y);
-  const fed = moldGlance(sim, mold).sd;
+  paint(sim, 8 + px, 4.5);
+  const fed = moldGlance(sim, 0).sd;
   assert.ok(fed < bare - px * 0.5, `bare ${bare} fed ${fed}`);
+});
+
+test("cambiar de estado borra el olor y deja el trazo casi vacío", () => {
+  const sim = createSim({ count: 0, moldCount: 4, seed: 13 });
+  sim.trail[10] = 1;
+  sim.figure[10] = 1;
+  const before = sim.moldH[0];
+  setMoldPoint(sim, 2);
+  assert.equal(sim.moldPoint, 2);
+  assert.equal(sim.trail[10], 0);
+  assert.ok(sim.figure[10] < 0.1);
+  assert.notEqual(sim.moldH[0], before);
 });
 
 test("el clic abre un hueco en la mancha", () => {

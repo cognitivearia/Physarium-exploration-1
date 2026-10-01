@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MOLD_POINTS, PALETTE, clearTrail, createSim, rebuildField, reseedField, step } from "./sim.js";
+import { MOLD_POINTS, PALETTE, clearTrail, createSim, rebuildField, reseedField, setMoldPoint, step } from "./sim.js";
 
 const sim = createSim();
 linkPerformance(sim);
@@ -123,7 +123,8 @@ function applyHeld(dt) {
 function linkPerformance(current) {
   const glue = clamp(current.physWeight, 0, 2) / 2;
   const group = clamp(current.flockWeight, 0, 2) / 2;
-  current.decay = 0.9 + glue * 0.08;
+  current.decay = 0.8 + glue * 0.1;
+  current.figureKeep = 0.962 + glue * 0.032;
   current.perception = 0.4 + group * 2.3;
 }
 
@@ -137,7 +138,15 @@ function onKeyDown(event) {
   if (key === "c" && !event.repeat) clearTrail(sim);
   if (key === "h" && !event.repeat) hud.classList.toggle("hidden");
   if (key === "f" && !event.repeat) toggleFullscreen();
-  if ("1234".includes(key) && !event.repeat) sim.moldPoint = Number(key) - 1;
+  if ("1234".includes(key) && !event.repeat) setMoldPoint(sim, Number(key) - 1);
+  if (key === "arrowright" && !event.repeat) {
+    event.preventDefault();
+    setMoldPoint(sim, sim.moldPoint + 1);
+  }
+  if (key === "arrowleft" && !event.repeat) {
+    event.preventDefault();
+    setMoldPoint(sim, sim.moldPoint - 1);
+  }
 }
 
 function onPointer(event) {
@@ -170,18 +179,19 @@ function resize() {
 function writeTrail() {
   const cold = [58, 28, 78];
   const t = agrioMix;
-  for (let i = 0; i < sim.trail.length; i++) {
-    const value = Math.min(1, sim.trail[i]);
-    const shown = value < 0.04 ? 0 : Math.pow((value - 0.04) / 0.96, 0.85);
+  const figure = sim.figure;
+  for (let i = 0; i < figure.length; i++) {
+    const value = figure[i];
+    const shown = value < 0.75 ? 0 : Math.min(1, (value - 0.75) * 2.8);
     const pixel = i * 4;
-    const grease = 10 + (1 - shown) * 14;
-    const r = grease * 1.25;
-    const g = grease * 0.82;
-    const b = grease * 0.48;
+    const grease = 8 + (1 - shown) * 10;
+    const r = grease * 1.2;
+    const g = grease * 0.78;
+    const b = grease * 0.45;
     trailData[pixel] = r + (cold[0] - r) * t;
     trailData[pixel + 1] = g + (cold[1] - g) * t;
     trailData[pixel + 2] = b + (cold[2] - b) * t;
-    trailData[pixel + 3] = Math.floor(Math.min(1, shown * 1.25) * 250);
+    trailData[pixel + 3] = Math.floor(shown * 255);
   }
   trailTexture.needsUpdate = true;
 }
@@ -233,11 +243,11 @@ function hudHtml() {
   const scaleWord =
     sim.noiseScale < 0.05 ? "muy amplia" : sim.noiseScale < 0.09 ? "amplia" : sim.noiseScale < 0.16 ? "media" : "menuda";
   const memory =
-    sim.decay > 0.93 ? "la mancha se queda" : sim.decay > 0.85 ? "la mancha dura un rato" : "la mancha se borra pronto";
+    sim.figureKeep > 0.985 ? "el trazo se queda" : sim.figureKeep > 0.97 ? "el trazo dura" : "el trazo se suelta";
   return `
     <p class="title">MALUCA — recortes</p>
     <p>La canción va en otra ventana. Este instrumento no la escucha.</p>
-    <p>Moho ${MOLD_POINTS[sim.moldPoint].name} — 1 red · 2 nudos · 3 cordones · 4 ramas</p>
+    <p>Estado ${MOLD_POINTS[sim.moldPoint].name} — flechas o 1 red · 2 nudos · 3 cordones · 4 ramas</p>
     <p>La mano hace crecer el moho. El clic lo aparta.</p>
     <p>Campo ${word(sim.flowWeight)} (${sim.flowWeight.toFixed(2)}) — las curvas del recuerdo</p>
     <p>Escala ${scaleWord} (${sim.noiseScale.toFixed(2)})</p>
@@ -245,7 +255,7 @@ function hudHtml() {
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
     <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
-    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: 1–4 moho · Z agrio · R otro campo · C borrar mancha · clic aparta · F pantalla · H ocultar</p>
+    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
   `;
 }
 

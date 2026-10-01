@@ -10,9 +10,10 @@ import { seedNoise, simplex2 } from "./noise.js";
 //       Sin clic, alimenta el moho. Con clic, abre la mancha y el campo apunta hacia afuera.
 //
 // El moho es otra población. No usa el campo ni el grupo.
-// Es el algoritmo de Jeff Jones: tres sensores, gira al más fuerte, avanza, deja tinta,
-// y la mancha se difumina y se apaga. Como en 36 Points, esos cuatro números
-// cambian según la tinta que hay bajo el agente. Los valores de abajo son de esta pieza.
+// Jeff Jones: tres sensores, gira al más fuerte, avanza, deja olor.
+// El olor se difumina y se apaga, para que un estado nuevo pueda nacer.
+// Lo que se ve no es ese olor: es el trazo de las partículas, fino y quieto,
+// hasta que cambias de estado. Los números de cada estado son de esta pieza.
 
 // Polvo, ladrillo, zinc, nicotina, grasa. El rosa y el violeta de fotocopia son escasos.
 export const PALETTE = [
@@ -34,35 +35,35 @@ const DIRT = [0, 0, 1, 1, 3, 3, 6, 6, 7, 8, 8, 8, 4, 2, 5];
 export const MOLD_POINTS = [
   {
     name: "red",
-    sd0: 9, sd1: 5, sdP: 1,
-    sa0: 0.52, sa1: 0.28, saP: 1,
-    ra0: 0.42, ra1: 0.12, raP: 1,
-    md0: 1.05, md1: 0.15, mdP: 1,
-    ahead: 1, ink: 0.22, life: 0,
+    sd0: 8, sd1: 3, sdP: 1,
+    sa0: 0.55, sa1: 0.2, saP: 1,
+    ra0: 0.4, ra1: 0.1, raP: 1,
+    md0: 1, md1: 0, mdP: 1,
+    ahead: 1, ink: 0.16, life: 0,
   },
   {
     name: "nudos",
-    sd0: 14, sd1: -7, sdP: 1,
-    sa0: 0.28, sa1: 0.95, saP: 0.7,
-    ra0: 0.38, ra1: 0.45, raP: 1,
-    md0: 1.15, md1: -0.2, mdP: 1,
-    ahead: 2, ink: 0.24, life: 0,
+    sd0: 6, sd1: -2.5, sdP: 1,
+    sa0: 1.05, sa1: 0.15, saP: 1,
+    ra0: 0.85, ra1: 0.1, raP: 1,
+    md0: 0.62, md1: 0, mdP: 1,
+    ahead: 1, ink: 0.14, life: 0,
   },
   {
     name: "cordones",
-    sd0: 6, sd1: 2, sdP: 1,
-    sa0: 1.15, sa1: 0.28, saP: 1,
-    ra0: 0.78, ra1: 0.15, raP: 1,
-    md0: 0.9, md1: 0, mdP: 1,
-    ahead: 0, ink: 0.2, life: 0,
+    sd0: 20, sd1: -3, sdP: 1,
+    sa0: 0.34, sa1: 0.1, saP: 1,
+    ra0: 0.16, ra1: 0.04, raP: 1,
+    md0: 1.7, md1: 0.15, mdP: 1,
+    ahead: 4, ink: 0.12, life: 0,
   },
   {
     name: "ramas",
-    sd0: 16, sd1: 3, sdP: 1,
-    sa0: 0.2, sa1: 0.1, saP: 1,
-    ra0: 0.16, ra1: 0.06, raP: 1,
-    md0: 1.45, md1: 0.2, mdP: 1,
-    ahead: 3, ink: 0.32, life: 0,
+    sd0: 30, sd1: 2, sdP: 1,
+    sa0: 0.14, sa1: 0.05, saP: 1,
+    ra0: 0.09, ra1: 0.03, raP: 1,
+    md0: 2.1, md1: 0, mdP: 1,
+    ahead: 6, ink: 0.1, life: 0,
   },
 ];
 
@@ -75,10 +76,11 @@ export function createSim(options = {}) {
     rows: 270,
     fCols: 80,
     fRows: 45,
-    count: options.count ?? 280,
-    moldCount: options.moldCount ?? (options.count == null ? 9000 : 0),
+    count: options.count ?? 90,
+    moldCount: options.moldCount ?? (options.count == null ? 42000 : 0),
     moldPoint: options.moldPoint ?? 0,
-    spread: 0.5,
+    spread: 0.35,
+    figureKeep: 0.975,
     flowWeight: 0.9,
     physWeight: 0.65,
     flockWeight: 0.45,
@@ -96,25 +98,33 @@ export function createSim(options = {}) {
     agents: [],
     inspect: null,
   };
+  sim.invW = 1 / sim.w;
+  sim.invH = 1 / sim.h;
   sim.trail = new Float32Array(sim.cols * sim.rows);
   sim.trailBuf = new Float32Array(sim.cols * sim.rows);
+  sim.figure = new Float32Array(sim.cols * sim.rows);
   sim.field = new Float32Array(sim.fCols * sim.fRows);
   rebuildField(sim);
-  sim.mold = [];
+  sim.moldX = new Float32Array(sim.moldCount);
+  sim.moldY = new Float32Array(sim.moldCount);
+  sim.moldH = new Float32Array(sim.moldCount);
   for (let i = 0; i < sim.count; i++) sim.agents.push(makeAgent(sim));
   for (let i = 0; i < sim.moldCount; i++) {
-    const heading = rand(sim) * Math.PI * 2;
-    sim.mold.push({
-      x: rand(sim) * sim.w,
-      y: rand(sim) * sim.h,
-      heading,
-      age: rand(sim) * 8,
-      trailL: 0,
-      trailC: 0,
-      trailR: 0,
-    });
+    sim.moldX[i] = rand(sim) * sim.w;
+    sim.moldY[i] = rand(sim) * sim.h;
+    sim.moldH[i] = rand(sim) * Math.PI * 2;
   }
   return sim;
+}
+
+export function setMoldPoint(sim, index) {
+  const count = MOLD_POINTS.length;
+  sim.moldPoint = ((index % count) + count) % count;
+  sim.trail.fill(0);
+  const figure = sim.figure;
+  for (let i = 0; i < figure.length; i++) figure[i] *= 0.08;
+  const headings = sim.moldH;
+  for (let i = 0; i < headings.length; i++) headings[i] = rand(sim) * Math.PI * 2;
 }
 
 function makeAgent(sim) {
@@ -193,6 +203,7 @@ export function reseedField(sim) {
 
 export function clearTrail(sim) {
   sim.trail.fill(0);
+  sim.figure.fill(0);
 }
 
 export function step(sim, dt) {
@@ -256,20 +267,28 @@ export function step(sim, dt) {
     deposit(sim, agents[i].x, agents[i].y, stamp);
   }
   if (sim.hand.on && !sim.hand.repel) {
-    depositDisk(sim, sim.hand.x, sim.hand.y, 0.28, 0.55);
+    depositDisk(sim, sim.hand.x, sim.hand.y, 0.22, 0.7);
+    paintDisk(sim, sim.hand.x, sim.hand.y, 0.16, (index) => {
+      sim.figure[index] = Math.min(1.6, sim.figure[index] + 0.9);
+    });
   }
   if (sim.hand.on && sim.hand.repel) {
-    eraseDisk(sim, sim.hand.x, sim.hand.y, 0.55);
+    eraseDisk(sim, sim.hand.x, sim.hand.y, 0.5);
   }
   diffuse(sim, dt);
+  fadeFigure(sim, dt);
   sim.inspect = inspectClosest(sim);
 }
 
 // La tinta bajo el agente cambia sensor, giro y paso. Luego huele tres puntos.
-export function moldGlance(sim, mold, point = MOLD_POINTS[sim.moldPoint] || MOLD_POINTS[0]) {
+export function moldGlance(sim, index, point = MOLD_POINTS[sim.moldPoint] || MOLD_POINTS[0]) {
   const px = sim.w / sim.cols;
+  const heading = sim.moldH[index];
   const ahead = point.ahead * px;
-  const stain = Math.min(1, sampleTrail(sim, mold.x + Math.cos(mold.heading) * ahead, mold.y + Math.sin(mold.heading) * ahead));
+  const stain = Math.min(
+    1,
+    sampleTrail(sim, sim.moldX[index] + Math.cos(heading) * ahead, sim.moldY[index] + Math.sin(heading) * ahead),
+  );
   const sd = Math.max(px, (point.sd0 + point.sd1 * Math.pow(stain, point.sdP)) * px);
   const sa = Math.max(0.05, point.sa0 + point.sa1 * Math.pow(stain, point.saP));
   const ra = Math.max(0.02, point.ra0 + point.ra1 * Math.pow(stain, point.raP));
@@ -278,48 +297,101 @@ export function moldGlance(sim, mold, point = MOLD_POINTS[sim.moldPoint] || MOLD
 }
 
 function stepMold(sim, dt) {
+  const n = sim.moldCount;
+  if (!n) return;
   const frames = dt * 60;
-  const molds = sim.mold;
   const point = MOLD_POINTS[sim.moldPoint] || MOLD_POINTS[0];
-  for (let i = 0; i < molds.length; i++) {
-    const mold = molds[i];
-    const look = moldGlance(sim, mold, point);
-    const hx = Math.cos(mold.heading);
-    const hy = Math.sin(mold.heading);
-    const lx = Math.cos(mold.heading + look.sa);
-    const ly = Math.sin(mold.heading + look.sa);
-    const rx = Math.cos(mold.heading - look.sa);
-    const ry = Math.sin(mold.heading - look.sa);
-    const center = sampleTrail(sim, mold.x + hx * look.sd, mold.y + hy * look.sd);
-    const left = sampleTrail(sim, mold.x + lx * look.sd, mold.y + ly * look.sd);
-    const right = sampleTrail(sim, mold.x + rx * look.sd, mold.y + ry * look.sd);
-    mold.trailC = center;
-    mold.trailL = left;
-    mold.trailR = right;
+  const xs = sim.moldX;
+  const ys = sim.moldY;
+  const hs = sim.moldH;
+  const trail = sim.trail;
+  const figure = sim.figure;
+  const cols = sim.cols;
+  const rows = sim.rows;
+  const invW = sim.invW;
+  const invH = sim.invH;
+  const px = sim.w / cols;
+  const ink = point.ink * frames;
+  const repel = sim.hand.on && sim.hand.repel;
+  const handX = sim.hand.x;
+  const handY = sim.hand.y;
+  const radius = sim.hand.radius;
+  const worldW = sim.w;
+  const worldH = sim.h;
+  const sd0 = point.sd0;
+  const sd1 = point.sd1;
+  const sdP = point.sdP;
+  const sa0 = point.sa0;
+  const sa1 = point.sa1;
+  const saP = point.saP;
+  const ra0 = point.ra0;
+  const ra1 = point.ra1;
+  const raP = point.raP;
+  const md0 = point.md0;
+  const md1 = point.md1;
+  const mdP = point.mdP;
+  const aheadPx = point.ahead * px;
+
+  for (let i = 0; i < n; i++) {
+    let x = xs[i];
+    let y = ys[i];
+    let heading = hs[i];
+    const cosH = Math.cos(heading);
+    const sinH = Math.sin(heading);
+    const stain = Math.min(1, trail[cellOf(x + cosH * aheadPx, y + sinH * aheadPx)]);
+    const sd = Math.max(px, (sd0 + sd1 * Math.pow(stain, sdP)) * px);
+    const sa = Math.max(0.05, sa0 + sa1 * Math.pow(stain, saP));
+    const ra = Math.max(0.02, ra0 + ra1 * Math.pow(stain, raP));
+    const md = Math.max(px * 0.25, (md0 + md1 * Math.pow(stain, mdP)) * px);
+    const center = trail[cellOf(x + cosH * sd, y + sinH * sd)];
+    const left = trail[cellOf(x + Math.cos(heading + sa) * sd, y + Math.sin(heading + sa) * sd)];
+    const right = trail[cellOf(x + Math.cos(heading - sa) * sd, y + Math.sin(heading - sa) * sd)];
     let turn = 0;
     if (center < left && center < right) turn = rand(sim) < 0.5 ? 1 : -1;
     else if (left > center && left >= right) turn = 1;
     else if (right > center && right > left) turn = -1;
-    mold.heading += turn * look.ra * frames;
-    if (sim.hand.on && sim.hand.repel) {
-      const dx = toroidal(mold.x - sim.hand.x, sim.w);
-      const dy = toroidal(mold.y - sim.hand.y, sim.h);
+    heading += turn * ra * frames;
+    if (repel) {
+      let dx = x - handX;
+      let dy = y - handY;
+      if (dx > worldW * 0.5) dx -= worldW;
+      else if (dx < -worldW * 0.5) dx += worldW;
+      if (dy > worldH * 0.5) dy -= worldH;
+      else if (dy < -worldH * 0.5) dy += worldH;
       const dist = Math.hypot(dx, dy);
-      if (dist < sim.hand.radius && dist > 0.0001) mold.heading = Math.atan2(dy, dx);
+      if (dist < radius && dist > 0.0001) heading = Math.atan2(dy, dx);
     }
-    mold.x = wrap(mold.x + Math.cos(mold.heading) * look.md * frames, sim.w);
-    mold.y = wrap(mold.y + Math.sin(mold.heading) * look.md * frames, sim.h);
-    deposit(sim, mold.x, mold.y, point.ink * frames);
-    if (point.life > 0) {
-      mold.age += dt;
-      if (mold.age > point.life) {
-        mold.x = rand(sim) * sim.w;
-        mold.y = rand(sim) * sim.h;
-        mold.heading = rand(sim) * Math.PI * 2;
-        mold.age = 0;
-      }
-    }
+    x += Math.cos(heading) * md * frames;
+    y += Math.sin(heading) * md * frames;
+    x %= worldW;
+    if (x < 0) x += worldW;
+    y %= worldH;
+    if (y < 0) y += worldH;
+    const cell = cellOf(x, y);
+    const scent = trail[cell] + ink;
+    trail[cell] = scent > 1.4 ? 1.4 : scent;
+    const drawn = figure[cell] + 0.72;
+    figure[cell] = drawn > 1.6 ? 1.6 : drawn;
+    xs[i] = x;
+    ys[i] = y;
+    hs[i] = heading;
   }
+
+  function cellOf(x, y) {
+    let u = x * invW;
+    let v = y * invH;
+    u -= Math.floor(u);
+    v -= Math.floor(v);
+    const col = u * cols;
+    const row = v * rows;
+    return ((row < rows ? row : rows - 1) | 0) * cols + ((col < cols ? col : cols - 1) | 0);
+  }
+}
+
+function fadeFigure(sim, dt) {
+  const keep = Math.pow(sim.figureKeep, dt * 60);
+  const figure = sim.figure;
+  for (let i = 0; i < figure.length; i++) figure[i] *= keep;
 }
 
 export function angleAt(sim, x, y) {
@@ -467,6 +539,7 @@ function depositDisk(sim, x, y, radius, amount) {
 function eraseDisk(sim, x, y, radius) {
   paintDisk(sim, x, y, radius, (index) => {
     sim.trail[index] *= 0.08;
+    sim.figure[index] *= 0.05;
   });
 }
 

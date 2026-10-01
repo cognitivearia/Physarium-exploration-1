@@ -2,7 +2,7 @@
 
 Instrumento visual para interpretar en vivo [MALUCA](https://www.youtube.com/watch?v=2mUFcVPyg28), de WEED420. Corre en el navegador con three.js.
 
-Hay dos poblaciones y ningún jefe. El moho es una red fina entre la hoja y los recortes: cada agente huele tres puntos, gira hacia el más fuerte y deja tinta. Según la tinta que pisa, mira más lejos, gira más o avanza distinto. Por eso hay cuatro caracteres (red, nudos, cordones, ramas), el mismo algoritmo con otros números. Los recortes vuelan encima. La música suena en otra ventana.
+Hay dos poblaciones y ningún jefe. El moho son muchas partículas entre la hoja y los recortes. Cada una huele tres puntos, gira hacia el más fuerte y deja olor. Lo que se ve no es ese olor: es el trazo donde están ahora, negro y definido. Con las flechas, o con 1–4, cambias el estado y la figura se arma de otro modo: red, nudos, cordones o ramas. Los recortes son menos, para dejar sitio al moho. La música suena en otra ventana.
 
 ## Cómo abrirlo
 
@@ -29,7 +29,7 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 | T / G | Escala del campo. Menudo es nervioso; amplio es una curva larga. |
 | W / S | Pegamento. Cuánto siguen los recortes la mancha, y si esa mancha se queda. |
 | E / D | Grupo. También agranda o achica el radio: a quién alcanzan a ver. |
-| 1 / 2 / 3 / 4 | Carácter del moho: red, nudos, cordones o ramas. |
+| Flechas o 1 / 2 / 3 / 4 | Estado del moho. La figura anterior se suelta y nace la nueva: red, nudos, cordones o ramas. |
 | Z | Agrio. Los ángulos se quiebran cada 45° y la copia se pone violeta. |
 | Ratón | Sin clic, la mano alimenta el moho y dobla el campo a su alrededor. |
 | Clic | Abre un hueco en la mancha. El campo cercano apunta hacia afuera. |
@@ -40,9 +40,9 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 
 Cada agente mira solo tres puntos de la mancha: adelante, a la izquierda y a la derecha. Gira hacia el más fuerte, da un paso y deja tinta. Si el centro es el más vacío, elige un lado al azar. No lee el campo ni mira a los recortes.
 
-Antes de mirar, lee la tinta bajo sus pies. Esa tinta cambia cuatro cosas: a qué distancia huele, cuánto se abren los sensores, cuánto gira y cuánto avanza. Es el mismo algoritmo en los cuatro caracteres; cambian los números. La mancha luego se difumina un poco y se apaga, para que la red no se vuelva un borrón.
+Antes de mirar, lee la tinta bajo sus pies. Esa tinta cambia cuatro cosas: a qué distancia huele, cuánto se abren los sensores, cuánto gira y cuánto avanza. Es el mismo algoritmo en los cuatro estados; cambian los números. El olor sí se apaga, para que el estado nuevo pueda nacer. El trazo que ves se queda mientras las partículas lo recorren.
 
-La mano no les da una ruta. Sin clic deja comida y la mancha crece desde ahí. Con clic borra un disco y los que están cerca giran hacia afuera.
+La mano no les da una ruta. Sin clic deja comida y el trazo crece desde ahí. Con clic abre un hueco y los que están cerca giran hacia afuera.
 
 ## Qué percibe cada recorte
 
