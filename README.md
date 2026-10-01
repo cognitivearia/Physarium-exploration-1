@@ -2,7 +2,7 @@
 
 Instrumento visual para interpretar en vivo [MALUCA](https://www.youtube.com/watch?v=2mUFcVPyg28), de WEED420. Corre en el navegador con three.js.
 
-Los recortes son agentes. No hay un jefe ni una secuencia atada a la canción. La música suena en otra ventana. Tú escuchas y decides cuándo cambiar el campo, el pegamento o el grupo.
+Hay dos poblaciones y ningún jefe. El moho huele su propia mancha y la va dibujando entre la hoja y los recortes. Los recortes vuelan encima: leen el campo, el pegamento y a sus vecinos. La música suena en otra ventana. Tú escuchas y decides cuándo cambiar el campo, el pegamento o el grupo.
 
 ## Cómo abrirlo
 
@@ -27,13 +27,19 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 | --- | --- |
 | Q / A | Peso del campo. Las curvas del recuerdo tiran más o menos. |
 | T / G | Escala del campo. Menudo es nervioso; amplio es una curva larga. |
-| W / S | Pegamento. También decide si la mancha se queda o se borra. |
+| W / S | Pegamento. Cuánto siguen los recortes la mancha, y si esa mancha se queda. |
 | E / D | Grupo. También agranda o achica el radio: a quién alcanzan a ver. |
-| Z | Agrio. Los ángulos se quiebran cada 45° y los colores se enfrían. |
-| Ratón | Dobla el campo cerca de la mano y deja pegamento. |
-| Clic | El campo cercano apunta hacia afuera: los recortes se apartan. |
+| Z | Agrio. Los ángulos se quiebran cada 45° y la copia se pone violeta. |
+| Ratón | Sin clic, la mano alimenta el moho y dobla el campo a su alrededor. |
+| Clic | Abre un hueco en la mancha. El campo cercano apunta hacia afuera. |
 | R | Otro campo, los mismos recortes. |
 | C | Borra la mancha. |
+
+## Qué percibe el moho
+
+Cada agente del moho mira solo tres puntos de la mancha: adelante, a la izquierda y a la derecha. Gira hacia el más fuerte, da un paso y deja tinta. No lee el campo ni mira a los recortes. Si el centro es el más vacío, elige un lado al azar.
+
+La mano no les da una ruta. Sin clic deja comida y la mancha crece desde ahí. Con clic borra un disco y los que están cerca giran hacia afuera.
 
 ## Qué percibe cada recorte
 

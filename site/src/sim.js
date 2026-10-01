@@ -8,7 +8,9 @@ import { seedNoise, simplex2 } from "./noise.js";
 //   — adelante, izquierda y derecha — y gira hacia el más fuerte.
 // Grupo: solo cuenta recortes dentro de su radio.
 // Mano: no es un jefe. Dobla el campo cerca del cursor.
-//       Sin clic, deja pegamento. Con clic, el campo apunta hacia afuera.
+//       Sin clic, alimenta el moho. Con clic, abre la mancha y el campo apunta hacia afuera.
+// El moho es otra población: solo huele la mancha, camina y la deposita.
+// No usa el campo ni el grupo. No se dibuja; se ve la tinta.
 
 // Polvo, ladrillo, zinc, nicotina, grasa. El rosa y el violeta de fotocopia son escasos.
 export const PALETTE = [
@@ -30,11 +32,12 @@ export function createSim(options = {}) {
   const sim = {
     w: 16,
     h: 9,
-    cols: 160,
-    rows: 90,
+    cols: 280,
+    rows: 158,
     fCols: 80,
     fRows: 45,
     count: options.count ?? 280,
+    moldCount: options.moldCount ?? (options.count == null ? 2800 : 0),
     flowWeight: 0.9,
     physWeight: 0.65,
     flockWeight: 0.45,
@@ -44,7 +47,10 @@ export function createSim(options = {}) {
     sensorDist: 0.78,
     sensorAngle: 0.62,
     rotationSpeed: 3.6,
-    deposit: 0.85,
+    deposit: 0.08,
+    moldMove: 1.15,
+    moldTurn: 6.4,
+    moldDeposit: 0.11,
     agrio: false,
     fieldSeed: seed >>> 0,
     rng: seed >>> 0,
@@ -56,7 +62,19 @@ export function createSim(options = {}) {
   sim.trailBuf = new Float32Array(sim.cols * sim.rows);
   sim.field = new Float32Array(sim.fCols * sim.fRows);
   rebuildField(sim);
+  sim.mold = [];
   for (let i = 0; i < sim.count; i++) sim.agents.push(makeAgent(sim));
+  for (let i = 0; i < sim.moldCount; i++) {
+    const heading = rand(sim) * Math.PI * 2;
+    sim.mold.push({
+      x: rand(sim) * sim.w,
+      y: rand(sim) * sim.h,
+      heading,
+      trailL: 0,
+      trailC: 0,
+      trailR: 0,
+    });
+  }
   return sim;
 }
 
@@ -142,7 +160,7 @@ export function step(sim, dt) {
   const agents = sim.agents;
   for (let i = 0; i < agents.length; i++) {
     const agent = agents[i];
-    senseTrail(sim, agent, dt);
+    senseTrail(sim, agent, dt, sim.rotationSpeed);
     let fx = 0;
     let fy = 0;
 
@@ -193,15 +211,40 @@ export function step(sim, dt) {
     agent.rot += agent.spin * dt;
   }
 
+  stepMold(sim, dt);
   const stamp = sim.deposit * dt * 60;
   for (let i = 0; i < agents.length; i++) {
     deposit(sim, agents[i].x, agents[i].y, stamp);
   }
   if (sim.hand.on && !sim.hand.repel) {
-    depositDisk(sim, sim.hand.x, sim.hand.y, 0.34, stamp * 1.8);
+    depositDisk(sim, sim.hand.x, sim.hand.y, 0.42, 0.22);
+  }
+  if (sim.hand.on && sim.hand.repel) {
+    eraseDisk(sim, sim.hand.x, sim.hand.y, 0.7);
   }
   diffuse(sim, dt);
   sim.inspect = inspectClosest(sim);
+}
+
+// El moho solo huele su mancha y camina hacia ella.
+// La mano, sin clic, deja comida. Con clic, abre la mancha y los empuja afuera.
+function stepMold(sim, dt) {
+  const stepLength = sim.moldMove * dt;
+  const ink = sim.moldDeposit * dt * 60;
+  const molds = sim.mold;
+  for (let i = 0; i < molds.length; i++) {
+    const mold = molds[i];
+    senseTrail(sim, mold, dt, sim.moldTurn);
+    if (sim.hand.on && sim.hand.repel) {
+      const dx = toroidal(mold.x - sim.hand.x, sim.w);
+      const dy = toroidal(mold.y - sim.hand.y, sim.h);
+      const dist = Math.hypot(dx, dy);
+      if (dist < sim.hand.radius && dist > 0.0001) mold.heading = Math.atan2(dy, dx);
+    }
+    mold.x = wrap(mold.x + Math.cos(mold.heading) * stepLength, sim.w);
+    mold.y = wrap(mold.y + Math.sin(mold.heading) * stepLength, sim.h);
+    deposit(sim, mold.x, mold.y, ink);
+  }
 }
 
 export function angleAt(sim, x, y) {
@@ -227,7 +270,7 @@ export function angleAt(sim, x, y) {
   return angle;
 }
 
-function senseTrail(sim, agent, dt) {
+function senseTrail(sim, agent, dt, turnSpeed) {
   const ahead = sim.sensorDist;
   const side = sim.sensorAngle;
   agent.trailC = sampleTrail(sim, agent.x + Math.cos(agent.heading) * ahead, agent.y + Math.sin(agent.heading) * ahead);
@@ -248,7 +291,7 @@ function senseTrail(sim, agent, dt) {
   if (center < left && center < right) turn = rand(sim) < 0.5 ? 1 : -1;
   else if (left > center && left >= right) turn = 1;
   else if (right > center && right > left) turn = -1;
-  agent.heading += turn * sim.rotationSpeed * dt;
+  agent.heading += turn * turnSpeed * dt;
 }
 
 function flockForce(sim, index) {
@@ -310,6 +353,7 @@ export function countNeighbors(sim, index) {
 }
 
 function inspectClosest(sim) {
+  if (!sim.agents.length) return null;
   let index = 0;
   if (sim.hand.on) {
     let best = Infinity;
@@ -340,10 +384,30 @@ function inspectClosest(sim) {
 }
 
 function depositDisk(sim, x, y, radius, amount) {
-  deposit(sim, x, y, amount);
-  for (let k = 0; k < 8; k++) {
-    const angle = (k / 8) * Math.PI * 2;
-    deposit(sim, x + Math.cos(angle) * radius, y + Math.sin(angle) * radius, amount * 0.45);
+  paintDisk(sim, x, y, radius, (index) => {
+    sim.trail[index] = Math.min(1.6, sim.trail[index] + amount);
+  });
+}
+
+function eraseDisk(sim, x, y, radius) {
+  paintDisk(sim, x, y, radius, (index) => {
+    sim.trail[index] *= 0.08;
+  });
+}
+
+function paintDisk(sim, x, y, radius, apply) {
+  const reach = Math.max(1, Math.ceil((radius / sim.w) * sim.cols));
+  const center = trailIndex(sim, x, y);
+  const col0 = center % sim.cols;
+  const row0 = Math.floor(center / sim.cols);
+  const reachSq = reach * reach;
+  for (let oy = -reach; oy <= reach; oy++) {
+    for (let ox = -reach; ox <= reach; ox++) {
+      if (ox * ox + oy * oy > reachSq) continue;
+      const col = (col0 + ox + sim.cols) % sim.cols;
+      const row = (row0 + oy + sim.rows) % sim.rows;
+      apply(row * sim.cols + col);
+    }
   }
 }
 

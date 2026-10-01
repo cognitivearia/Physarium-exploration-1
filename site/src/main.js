@@ -123,7 +123,7 @@ function applyHeld(dt) {
 function linkPerformance(current) {
   const glue = clamp(current.physWeight, 0, 2) / 2;
   const group = clamp(current.flockWeight, 0, 2) / 2;
-  current.decay = 0.78 + glue * 0.19;
+  current.decay = 0.9 + glue * 0.08;
   current.perception = 0.4 + group * 2.3;
 }
 
@@ -167,18 +167,21 @@ function resize() {
 }
 
 function writeTrail() {
-    const warm = [36, 28, 22];
-    const cold = [48, 32, 92];
-    const t = agrioMix;
-    for (let i = 0; i < sim.trail.length; i++) {
-      const value = Math.min(1, sim.trail[i] * 1.35);
-      const alpha = Math.pow(value, 0.42);
-      const pixel = i * 4;
-      trailData[pixel] = warm[0] + (cold[0] - warm[0]) * t;
-      trailData[pixel + 1] = warm[1] + (cold[1] - warm[1]) * t;
-      trailData[pixel + 2] = warm[2] + (cold[2] - warm[2]) * t;
-      trailData[pixel + 3] = Math.floor(alpha * 235);
-    }
+  const cold = [58, 28, 78];
+  const t = agrioMix;
+  for (let i = 0; i < sim.trail.length; i++) {
+    const value = Math.min(1, sim.trail[i]);
+    const shown = value < 0.018 ? 0 : Math.pow((value - 0.018) / 0.982, 0.32);
+    const pixel = i * 4;
+    const grease = 10 + (1 - shown) * 14;
+    const r = grease * 1.25;
+    const g = grease * 0.82;
+    const b = grease * 0.48;
+    trailData[pixel] = r + (cold[0] - r) * t;
+    trailData[pixel + 1] = g + (cold[1] - g) * t;
+    trailData[pixel + 2] = b + (cold[2] - b) * t;
+    trailData[pixel + 3] = Math.floor(Math.min(1, shown * 1.25) * 250);
+  }
   trailTexture.needsUpdate = true;
 }
 
@@ -233,6 +236,7 @@ function hudHtml() {
   return `
     <p class="title">MALUCA — recortes</p>
     <p>La canción va en otra ventana. Este instrumento no la escucha.</p>
+    <p>La mano hace crecer el moho. El clic lo aparta.</p>
     <p>Campo ${word(sim.flowWeight)} (${sim.flowWeight.toFixed(2)}) — las curvas del recuerdo</p>
     <p>Escala ${scaleWord} (${sim.noiseScale.toFixed(2)})</p>
     <p>Pegamento ${word(sim.physWeight)} (${sim.physWeight.toFixed(2)}) — ${memory}</p>

@@ -97,6 +97,31 @@ test("agrio cuaja el ángulo del campo en pasos de 45 grados", () => {
   assert.ok(Math.abs(angle - Math.PI / 4) < 0.001, `angle=${angle}`);
 });
 
+test("el moho gira hacia la mancha más fuerte", () => {
+  const sim = createSim({ count: 0, moldCount: 1, seed: 9 });
+  const mold = sim.mold[0];
+  mold.x = 8;
+  mold.y = 4.5;
+  mold.heading = 0;
+  const leftX = mold.x + Math.cos(sim.sensorAngle) * sim.sensorDist;
+  const leftY = mold.y + Math.sin(sim.sensorAngle) * sim.sensorDist;
+  paint(sim, leftX, leftY);
+  const before = mold.heading;
+  step(sim, dt);
+  assert.ok(mold.heading > before, `heading ${before} -> ${mold.heading}`);
+});
+
+test("el clic abre un hueco en la mancha", () => {
+  const sim = createSim({ count: 0, moldCount: 0, seed: 11 });
+  sim.hand.on = true;
+  sim.hand.repel = true;
+  sim.hand.x = 8;
+  sim.hand.y = 4.5;
+  paint(sim, 8, 4.5);
+  step(sim, dt);
+  assert.ok(sampleTrail(sim, 8, 4.5) < 0.25, `trail=${sampleTrail(sim, 8, 4.5)}`);
+});
+
 function paint(sim, x, y) {
   const u = x / sim.w;
   const v = y / sim.h;
