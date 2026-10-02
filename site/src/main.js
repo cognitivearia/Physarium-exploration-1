@@ -99,10 +99,11 @@ let songNote = "";
 let heardHighs = 0;
 let heardHit = 0;
 let prevLow = 0;
-let hitAmount = 0.4;
+let hitAmount = 0.19;
 const cryAmount = 0.18;
 bindSong();
 bindHit();
+bindSpark();
 
 requestAnimationFrame(frame);
 
@@ -121,6 +122,7 @@ function frame() {
   updatePieces();
   renderer.render(scene, camera);
   drawGrain();
+  drawSparks(dt);
   if (!hud.classList.contains("hidden")) hud.innerHTML = hudHtml();
 }
 
@@ -292,21 +294,70 @@ function bindSong() {
 function bindHit() {
   const slider = document.getElementById("hit");
   const num = document.getElementById("hit-num");
-  const raw = localStorage.getItem("maluca-golpe");
+  const raw = localStorage.getItem("maluca-golpe2");
   const saved = raw === null || raw === "" ? NaN : Number(raw);
-  const start = Number.isFinite(saved) ? Math.max(0, Math.min(100, Math.round(saved))) : 40;
+  const start = Number.isFinite(saved) ? Math.max(0, Math.min(100, Math.round(saved))) : 19;
   slider.value = String(start);
   setHitAmount(start, num);
   slider.addEventListener("input", () => {
     const value = Number(slider.value);
     setHitAmount(value, num);
-    localStorage.setItem("maluca-golpe", String(value));
+    localStorage.setItem("maluca-golpe2", String(value));
   });
 }
 
 function setHitAmount(value, num) {
   hitAmount = value / 100;
   num.textContent = String(value);
+}
+
+const sparkCanvas = document.getElementById("sparks");
+const sparkCtx = sparkCanvas.getContext("2d");
+const sparks = [];
+
+function bindSpark() {
+  document.getElementById("spark").addEventListener("click", () => {
+    sparks.push({
+      x: Math.random(),
+      y: Math.random(),
+      radius: 18 + Math.random() * 22,
+      life: 0.45 + Math.random() * 0.35,
+      age: 0,
+    });
+  });
+}
+
+function drawSparks(dt) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  const pw = Math.max(1, Math.round(w * dpr));
+  const ph = Math.max(1, Math.round(h * dpr));
+  if (sparkCanvas.width !== pw || sparkCanvas.height !== ph) {
+    sparkCanvas.width = pw;
+    sparkCanvas.height = ph;
+  }
+  sparkCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sparkCtx.clearRect(0, 0, w, h);
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const spark = sparks[i];
+    spark.age += dt;
+    if (spark.age >= spark.life) {
+      sparks.splice(i, 1);
+      continue;
+    }
+    const glow = Math.sin(Math.PI * (spark.age / spark.life));
+    const x = spark.x * w;
+    const y = spark.y * h;
+    const paint = sparkCtx.createRadialGradient(x, y, 0, x, y, spark.radius);
+    paint.addColorStop(0, `rgba(255, 236, 196, ${0.9 * glow})`);
+    paint.addColorStop(0.42, `rgba(196, 98, 36, ${0.45 * glow})`);
+    paint.addColorStop(1, "rgba(196, 98, 36, 0)");
+    sparkCtx.fillStyle = paint;
+    sparkCtx.beginPath();
+    sparkCtx.arc(x, y, spark.radius, 0, Math.PI * 2);
+    sparkCtx.fill();
+  }
 }
 
 function startSong(play) {

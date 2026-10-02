@@ -5,14 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>MALUCA — recortes</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' fill='%23f3e6c8'/%3E%3Crect x='3' y='4' width='10' height='8' fill='%23c45a2a' transform='rotate(-8 8 8)'/%3E%3C/svg%3E" />
-    <script type="module" crossorigin src="/Physarium-exploration-1/assets/index-CPjLvqkc.js"></script>
-    <link rel="stylesheet" crossorigin href="/Physarium-exploration-1/assets/index-ZyJc-9D0.css">
+    <script type="module" crossorigin src="/Physarium-exploration-1/assets/index-CdqYhMpo.js"></script>
+    <link rel="stylesheet" crossorigin href="/Physarium-exploration-1/assets/index-5n3x0qDu.css">
   </head>
   <body>
     <div id="app"></div>
     <canvas id="grain" width="180" height="100"></canvas>
     <div id="flare"></div>
     <div id="vignette"></div>
+    <canvas id="sparks"></canvas>
     <div id="hud"></div>
     <div id="song">
       <label id="load">
@@ -22,9 +23,10 @@
       <button id="play" type="button" hidden>pausa</button>
       <label id="hit-label" for="hit">
         golpe
-        <input id="hit" type="range" min="0" max="100" step="1" value="40" />
-        <b id="hit-num">40</b>
+        <input id="hit" type="range" min="0" max="100" step="1" value="19" />
+        <b id="hit-num">19</b>
       </label>
+      <button id="spark" type="button">1 luz</button>
     </div>
   </body>
 </html>
