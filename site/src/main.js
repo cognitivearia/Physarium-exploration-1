@@ -65,6 +65,17 @@ const grainCtx = grain.getContext("2d", { alpha: true });
 const grainImage = grainCtx.createImageData(grain.width, grain.height);
 const held = new Set();
 let agrioMix = 0;
+let agrioHue = 0;
+const AGRIO_TRAIL = [
+  [86, 132, 126],
+  [58, 28, 78],
+  [156, 54, 96],
+];
+const AGRIO_PIECE = [
+  [0.46, 0.62, 0.58],
+  [0.42, 0.22, 0.55],
+  [0.7, 0.3, 0.46],
+];
 let viewW = 16;
 let viewH = 9;
 let noiseDirty = false;
@@ -116,6 +127,7 @@ function frame() {
   step(sim, dt);
   followVolume(dt);
   agrioMix += ((sim.agrio ? 1 : 0) - agrioMix) * Math.min(1, dt * 3.5);
+  if (sim.agrio) agrioHue = (agrioHue + dt * 0.28) % 3;
   writeTrail();
   updatePieces();
   renderer.render(scene, camera);
@@ -196,10 +208,24 @@ function resize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+function agrioTone(colors, phase) {
+  const span = ((phase % colors.length) + colors.length) % colors.length;
+  const index = Math.floor(span);
+  const current = colors[index];
+  const next = colors[(index + 1) % colors.length];
+  const f = span - index;
+  const s = f * f * (3 - 2 * f);
+  return [
+    current[0] + (next[0] - current[0]) * s,
+    current[1] + (next[1] - current[1]) * s,
+    current[2] + (next[2] - current[2]) * s,
+  ];
+}
+
 function writeTrail() {
-  const cold = [58, 28, 78];
   const t = agrioMix;
   const figure = sim.figure;
+  const cols = sim.cols;
   for (let i = 0; i < figure.length; i++) {
     const value = figure[i];
     const loud = sim.listen ? Math.min(1, Math.max(0, sim.pulse || 0)) : 0;
@@ -210,16 +236,17 @@ function writeTrail() {
     const r = grease * 1.2;
     const g = grease * 0.78;
     const b = grease * 0.45;
-    trailData[pixel] = r + (cold[0] - r) * t;
-    trailData[pixel + 1] = g + (cold[1] - g) * t;
-    trailData[pixel + 2] = b + (cold[2] - b) * t;
+    const place = ((i % cols) / cols) * 0.45;
+    const tone = agrioTone(AGRIO_TRAIL, agrioHue + place);
+    trailData[pixel] = r + (tone[0] - r) * t;
+    trailData[pixel + 1] = g + (tone[1] - g) * t;
+    trailData[pixel + 2] = b + (tone[2] - b) * t;
     trailData[pixel + 3] = Math.floor(shown * 255);
   }
   trailTexture.needsUpdate = true;
 }
 
 function updatePieces() {
-  const cyan = [0.42, 0.22, 0.55];
   buckets.forEach((list, kind) => {
     const mesh = meshes[kind];
     if (!mesh) return;
@@ -231,10 +258,11 @@ function updatePieces() {
       dummy.updateMatrix();
       mesh.setMatrixAt(i, dummy.matrix);
       const base = PALETTE[agent.colorIndex];
+      const tone = agrioTone(AGRIO_PIECE, agrioHue + (agent.x / sim.w) * 0.45);
       color.setRGB(
-        base[0] + (cyan[0] - base[0]) * agrioMix,
-        base[1] + (cyan[1] - base[1]) * agrioMix,
-        base[2] + (cyan[2] - base[2]) * agrioMix,
+        base[0] + (tone[0] - base[0]) * agrioMix,
+        base[1] + (tone[1] - base[1]) * agrioMix,
+        base[2] + (tone[2] - base[2]) * agrioMix,
         THREE.SRGBColorSpace,
       );
       mesh.setColorAt(i, color);
@@ -451,7 +479,7 @@ function hudHtml() {
     <p>Escala ${scaleWord} (${sim.noiseScale.toFixed(2)})</p>
     <p>Pegamento ${word(sim.physWeight)} (${sim.physWeight.toFixed(2)}) — ${memory}</p>
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
-    <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
+    <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y pasa por cian, violeta y rosa" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
     <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · L volumen · B una luz · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
   `;

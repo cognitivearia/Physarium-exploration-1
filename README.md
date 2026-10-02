@@ -35,7 +35,7 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 | Cargar canción | Abre un audio de tu computadora y lo suena. No se guarda en el proyecto. |
 | L | Enciende o apaga la escucha. Volumen engruesa, agudos lloran (fijo en 18), golpe empuja (fijo en 19). |
 | B | Una luz. Un destello pequeño en un lugar al azar. Dura menos de un segundo. |
-| Z | Agrio. Los ángulos se quiebran cada 45° y la copia se pone violeta. |
+| Z | Agrio. Los ángulos se quiebran cada 45° y la copia pasa por cian apagado, violeta y rosa. |
 | Ratón | Sin clic, la mano alimenta el moho y dobla el campo a su alrededor. |
 | Clic | Abre un hueco en la mancha. El campo cercano apunta hacia afuera. |
 | R | Otro campo, los mismos recortes. |
