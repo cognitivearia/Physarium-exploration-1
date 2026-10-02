@@ -94,6 +94,7 @@ export function createSim(options = {}) {
     agrio: false,
     listen: false,
     pulse: 0,
+    highs: 0,
     fieldSeed: seed >>> 0,
     rng: seed >>> 0,
     hand: { on: false, x: 8, y: 4.5, repel: false, radius: 1.75 },
@@ -314,8 +315,11 @@ function stepMold(sim, dt) {
   const invH = sim.invH;
   const px = sim.w / cols;
   const loud = sim.listen ? Math.min(1, Math.max(0, sim.pulse || 0)) : 0;
+  const cry = sim.listen ? Math.min(1, Math.max(0, sim.highs || 0)) : 0;
   const ink = point.ink * frames * (sim.listen ? 0.7 + loud * 0.9 : 1);
   const drawAdd = 0.72 + loud * 0.85;
+  const shiver = cry * 1.45 * frames;
+  const wobbleReach = cry * px * 7;
   const repel = sim.hand.on && sim.hand.repel;
   const handX = sim.hand.x;
   const handY = sim.hand.y;
@@ -344,7 +348,7 @@ function stepMold(sim, dt) {
     const sinH = Math.sin(heading);
     const stain = Math.min(1, trail[cellOf(x + cosH * aheadPx, y + sinH * aheadPx)]);
     const sd = Math.max(px, (sd0 + sd1 * Math.pow(stain, sdP)) * px);
-    const sa = Math.max(0.05, sa0 + sa1 * Math.pow(stain, saP));
+    const sa = Math.max(0.05, sa0 + sa1 * Math.pow(stain, saP)) * (1 + cry * 1.15);
     const ra = Math.max(0.02, ra0 + ra1 * Math.pow(stain, raP));
     const md = Math.max(px * 0.25, (md0 + md1 * Math.pow(stain, mdP)) * px);
     const center = trail[cellOf(x + cosH * sd, y + sinH * sd)];
@@ -355,6 +359,7 @@ function stepMold(sim, dt) {
     else if (left > center && left >= right) turn = 1;
     else if (right > center && right > left) turn = -1;
     heading += turn * ra * frames;
+    if (shiver > 0) heading += (rand(sim) - 0.5) * shiver;
     if (repel) {
       let dx = x - handX;
       let dy = y - handY;
@@ -371,11 +376,22 @@ function stepMold(sim, dt) {
     if (x < 0) x += worldW;
     y %= worldH;
     if (y < 0) y += worldH;
-    const cell = cellOf(x, y);
-    const scent = trail[cell] + ink;
-    trail[cell] = scent > 1.4 ? 1.4 : scent;
-    const drawn = figure[cell] + drawAdd;
-    figure[cell] = drawn > 1.6 ? 1.6 : drawn;
+    const gasp = cry > 0.28 && rand(sim) < cry * 0.4;
+    if (!gasp) {
+      const cell = cellOf(x, y);
+      const scent = trail[cell] + ink;
+      trail[cell] = scent > 1.4 ? 1.4 : scent;
+      const drawn = figure[cell] + drawAdd;
+      figure[cell] = drawn > 1.6 ? 1.6 : drawn;
+      if (wobbleReach > px) {
+        const side = (rand(sim) - 0.5) * wobbleReach;
+        const wx = x + Math.cos(heading + 1.5708) * side;
+        const wy = y + Math.sin(heading + 1.5708) * side;
+        const mark = cellOf(wx, wy);
+        const shaken = figure[mark] + drawAdd * 0.85;
+        figure[mark] = shaken > 1.6 ? 1.6 : shaken;
+      }
+    }
     xs[i] = x;
     ys[i] = y;
     hs[i] = heading;

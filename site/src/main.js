@@ -249,6 +249,7 @@ audio.preload = "auto";
 let audioCtx = null;
 let analyser = null;
 let wave = null;
+let spectrum = null;
 let songName = "";
 let songNote = "";
 
@@ -307,6 +308,7 @@ function hookAudio() {
   source.connect(analyser);
   analyser.connect(audioCtx.destination);
   wave = new Uint8Array(analyser.fftSize);
+  spectrum = new Uint8Array(analyser.frequencyBinCount);
 }
 
 function readLoudness() {
@@ -322,18 +324,40 @@ function readLoudness() {
   return Math.min(1, Math.pow(rms * 4.5, 0.8));
 }
 
+function readHighs() {
+  if (!sim.listen || !analyser || !spectrum || audio.paused) return 0;
+  analyser.getByteFrequencyData(spectrum);
+  const rate = audioCtx.sampleRate || 44100;
+  const binHz = rate / analyser.fftSize;
+  const start = Math.min(spectrum.length - 2, Math.max(1, Math.floor(3200 / binHz)));
+  const end = Math.min(spectrum.length - 1, Math.max(start + 1, Math.floor(14000 / binHz)));
+  let sum = 0;
+  let peak = 0;
+  for (let i = start; i <= end; i++) {
+    sum += spectrum[i];
+    if (spectrum[i] > peak) peak = spectrum[i];
+  }
+  const avg = sum / ((end - start + 1) * 255);
+  const hot = Math.max(avg, (peak / 255) * 0.9);
+  return Math.min(1, Math.pow(hot * 2.4, 0.5));
+}
+
 function followVolume(dt) {
   const target = readLoudness();
   const follow = target > sim.pulse ? 12 : 5;
   sim.pulse += (target - sim.pulse) * Math.min(1, dt * follow);
+  const sharp = readHighs();
+  const followSharp = sharp > sim.highs ? 18 : 8;
+  sim.highs += (sharp - sim.highs) * Math.min(1, dt * followSharp);
 }
 
 function songLine() {
   if (songNote) return songNote;
-  if (!songName) return "Arriba a la derecha: elegir mp3, en Archivos. L decide si el volumen engruesa el moho.";
+  if (!songName) return "Arriba a la derecha: elegir mp3, en Archivos. L: el volumen engruesa y los agudos hacen llorar la vena.";
   const ear = sim.listen ? "sí escucha" : "no escucha";
   const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
-  return `${songName} — volumen ${loud}. L: ${ear}. La mano sigue mandando.`;
+  const cry = sim.highs < 0.22 ? "quietos" : sim.highs < 0.55 ? "nerviosos" : "llanto";
+  return `${songName} — volumen ${loud}, agudos ${cry}. L: ${ear}. La mano sigue mandando.`;
 }
 
 function hudHtml() {
