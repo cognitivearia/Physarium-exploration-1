@@ -4,7 +4,7 @@ Instrumento visual para interpretar en vivo [MALUCA](https://www.youtube.com/wat
 
 Hay dos poblaciones y ningún jefe. El moho son muchas partículas entre la hoja y los recortes. Cada una huele tres puntos, gira hacia el más fuerte y deja olor. Lo que se ve no es ese olor: es el trazo donde están ahora, negro y definido. Con las flechas, o con 1–4, cambias el estado y la figura se arma de otro modo: red, nudos, cordones o ramas. Los recortes son menos, para dejar sitio al moho.
 
-La canción se carga desde tu computadora, con **elegir mp3** arriba a la derecha. En el iPad se abre Archivos. No va en el repositorio. `L` decide si el volumen engruesa el moho y si los agudos lo hacen temblar. Apagado, la figura se queda como está. Los agudos (charles, ruido, voz filosa) quiebran la vena: tiembla y se corta, como un llanto nervioso. El bajo no hace eso. La mano, el estado y el campo siguen siendo tuyos: el volumen no elige la figura.
+La canción se carga desde tu computadora, con **elegir mp3** arriba a la derecha. En el iPad se abre Archivos. No va en el repositorio. `L` decide si el volumen engruesa el moho y si los agudos lo hacen temblar. Apagado, la figura se queda como está. Los agudos (charles, ruido, voz filosa) quiebran la vena: tiembla y se corta, como un llanto nervioso. El bajo no hace eso. Al lado del botón hay un slider, magnitud de 0 a 100. El número grande es el que se puede decir para dejar el temblor fijo. 0 lo apaga. 100 es el máximo. La mano, el estado y el campo siguen siendo tuyos: el volumen no elige la figura.
 
 ## Cómo abrirlo
 

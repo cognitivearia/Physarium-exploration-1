@@ -151,6 +151,22 @@ test("si el volumen está alto, el trazo del moho ocupa más", () => {
   assert.ok(loud > quiet, `quiet ${quiet} loud ${loud}`);
 });
 
+test("los agudos hacen temblar el rumbo del moho", () => {
+  const sim = createSim({ count: 0, moldCount: 1, seed: 3 });
+  sim.listen = true;
+  sim.highs = 1;
+  sim.moldX[0] = 8;
+  sim.moldY[0] = 4.5;
+  sim.moldH[0] = 0;
+  let wander = 0;
+  for (let i = 0; i < 6; i++) {
+    const before = sim.moldH[0];
+    step(sim, dt);
+    wander += Math.abs(sim.moldH[0] - before);
+  }
+  assert.ok(wander > 1.2, `wander ${wander}`);
+});
+
 test("el clic abre un hueco en la mancha", () => {
   const sim = createSim({ count: 0, moldCount: 0, seed: 11 });
   sim.hand.on = true;

@@ -86,7 +86,20 @@ window.addEventListener("pointerleave", () => {
   sim.hand.repel = false;
 });
 window.addEventListener("blur", () => held.clear());
+
+const audio = new Audio();
+audio.setAttribute("playsinline", "true");
+audio.preload = "auto";
+let audioCtx = null;
+let analyser = null;
+let wave = null;
+let spectrum = null;
+let songName = "";
+let songNote = "";
+let cryAmount = 0.4;
+let heardHighs = 0;
 bindSong();
+bindCry();
 
 requestAnimationFrame(frame);
 
@@ -243,16 +256,6 @@ function drawGrain() {
   grainCtx.putImageData(grainImage, 0, 0);
 }
 
-const audio = new Audio();
-audio.setAttribute("playsinline", "true");
-audio.preload = "auto";
-let audioCtx = null;
-let analyser = null;
-let wave = null;
-let spectrum = null;
-let songName = "";
-let songNote = "";
-
 function bindSong() {
   const file = document.getElementById("file");
   const play = document.getElementById("play");
@@ -279,6 +282,26 @@ function bindSong() {
       play.textContent = "sigue";
     }
   });
+}
+
+function bindCry() {
+  const slider = document.getElementById("cry");
+  const num = document.getElementById("cry-num");
+  const raw = localStorage.getItem("maluca-agudos");
+  const saved = raw === null || raw === "" ? NaN : Number(raw);
+  const start = Number.isFinite(saved) ? Math.max(0, Math.min(100, Math.round(saved))) : 40;
+  slider.value = String(start);
+  setCryAmount(start, num);
+  slider.addEventListener("input", () => {
+    const value = Number(slider.value);
+    setCryAmount(value, num);
+    localStorage.setItem("maluca-agudos", String(value));
+  });
+}
+
+function setCryAmount(value, num) {
+  cryAmount = value / 100;
+  num.textContent = String(value);
 }
 
 function startSong(play) {
@@ -347,17 +370,19 @@ function followVolume(dt) {
   const follow = target > sim.pulse ? 12 : 5;
   sim.pulse += (target - sim.pulse) * Math.min(1, dt * follow);
   const sharp = readHighs();
-  const followSharp = sharp > sim.highs ? 28 : 10;
-  sim.highs += (sharp - sim.highs) * Math.min(1, dt * followSharp);
+  const followSharp = sharp > heardHighs ? 28 : 10;
+  heardHighs += (sharp - heardHighs) * Math.min(1, dt * followSharp);
+  sim.highs = heardHighs * cryAmount;
 }
 
 function songLine() {
   if (songNote) return songNote;
-  if (!songName) return "Arriba a la derecha: elegir mp3, en Archivos. L: el volumen engruesa y los agudos hacen llorar la vena.";
+  const magnitude = Math.round(cryAmount * 100);
+  if (!songName) return `Magnitud ${magnitude}, arriba a la derecha. Ese número es el que me dices. L: el volumen engruesa y los agudos hacen llorar la vena.`;
   const ear = sim.listen ? "sí escucha" : "no escucha";
   const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
   const cry = sim.highs < 0.22 ? "quietos" : sim.highs < 0.55 ? "nerviosos" : "llanto";
-  return `${songName} — volumen ${loud}, agudos ${cry}. L: ${ear}. La mano sigue mandando.`;
+  return `${songName} — magnitud ${magnitude}. Volumen ${loud}, agudos ${cry}. L: ${ear}.`;
 }
 
 function hudHtml() {
