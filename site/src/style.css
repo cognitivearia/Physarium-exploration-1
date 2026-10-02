@@ -137,29 +137,6 @@ body,
   cursor: pointer;
 }
 
-#hit-label {
-  position: static;
-  display: inline-flex;
-  gap: 0.45rem;
-  min-height: 44px;
-  padding: 0 0.35rem 0 0.15rem;
-}
-
-#hit {
-  width: 9.5rem;
-  height: 44px;
-  margin: 0;
-  accent-color: #16110c;
-  cursor: pointer;
-}
-
-#hit-num {
-  min-width: 2.2rem;
-  font-size: 22px;
-  font-weight: 700;
-  text-align: right;
-}
-
 #song button {
   min-height: 44px;
   padding: 0 0.55rem;

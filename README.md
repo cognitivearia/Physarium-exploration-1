@@ -4,7 +4,7 @@ Instrumento visual para interpretar en vivo [MALUCA](https://www.youtube.com/wat
 
 Hay dos poblaciones y ningún jefe. El moho son muchas partículas entre la hoja y los recortes. Cada una huele tres puntos, gira hacia el más fuerte y deja olor. Lo que se ve no es ese olor: es el trazo donde están ahora, negro y definido. Con las flechas, o con 1–4, cambias el estado y la figura se arma de otro modo: red, nudos, cordones o ramas. Los recortes son menos, para dejar sitio al moho.
 
-La canción se carga desde tu computadora, con **elegir mp3** arriba a la derecha. En el iPad se abre Archivos. No va en el repositorio. `L` decide si la canción mueve el moho. Apagado, la figura se queda como está. El volumen engruesa el trazo. Los agudos (charles, ruido, voz filosa) quiebran la vena, como un llanto nervioso, y esa fuerza quedó fija en 18. El golpe es aparte: es el ataque, un empujón corto de la vena, no el grosor ni el temblor. Su slider está arriba a la derecha y arranca en 19. El botón **1 luz** enciende un destello pequeño en un lugar al azar. Dura menos de un segundo y no toca el moho, la mano ni la canción.
+La canción se carga desde tu computadora, con **elegir mp3** arriba a la derecha. En el iPad se abre Archivos. No va en el repositorio. `L` decide si la canción mueve el moho. Apagado, la figura se queda como está. El volumen engruesa el trazo. Los agudos (charles, ruido, voz filosa) quiebran la vena, como un llanto nervioso, y esa fuerza quedó fija en 18. El golpe es aparte: es el ataque, un empujón corto de la vena, y quedó fijo en 19. La tecla **B** enciende un destello pequeño en un lugar al azar. Dura menos de un segundo y no toca el moho, la mano ni la canción.
 
 ## Cómo abrirlo
 
@@ -33,7 +33,8 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 | E / D | Grupo. También agranda o achica el radio: a quién alcanzan a ver. |
 | Flechas o 1 / 2 / 3 / 4 | Estado del moho. La figura anterior se suelta y nace la nueva: red, nudos, cordones o ramas. |
 | Cargar canción | Abre un audio de tu computadora y lo suena. No se guarda en el proyecto. |
-| L | Enciende o apaga la escucha. Volumen engruesa, agudos lloran (fijo en 18), golpe empuja. |
+| L | Enciende o apaga la escucha. Volumen engruesa, agudos lloran (fijo en 18), golpe empuja (fijo en 19). |
+| B | Una luz. Un destello pequeño en un lugar al azar. Dura menos de un segundo. |
 | Z | Agrio. Los ángulos se quiebran cada 45° y la copia se pone violeta. |
 | Ratón | Sin clic, la mano alimenta el moho y dobla el campo a su alrededor. |
 | Clic | Abre un hueco en la mancha. El campo cercano apunta hacia afuera. |

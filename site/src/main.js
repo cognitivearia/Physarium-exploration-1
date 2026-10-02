@@ -99,11 +99,9 @@ let songNote = "";
 let heardHighs = 0;
 let heardHit = 0;
 let prevLow = 0;
-let hitAmount = 0.19;
+const hitAmount = 0.19;
 const cryAmount = 0.18;
 bindSong();
-bindHit();
-bindSpark();
 
 requestAnimationFrame(frame);
 
@@ -159,6 +157,7 @@ function onKeyDown(event) {
   if (key === "h" && !event.repeat) hud.classList.toggle("hidden");
   if (key === "f" && !event.repeat) toggleFullscreen();
   if (key === "l" && !event.repeat) sim.listen = !sim.listen;
+  if (key === "b" && !event.repeat) addSpark();
   if ("1234".includes(key) && !event.repeat) setMoldPoint(sim, Number(key) - 1);
   if (key === "arrowright" && !event.repeat) {
     event.preventDefault();
@@ -291,39 +290,17 @@ function bindSong() {
   });
 }
 
-function bindHit() {
-  const slider = document.getElementById("hit");
-  const num = document.getElementById("hit-num");
-  const raw = localStorage.getItem("maluca-golpe2");
-  const saved = raw === null || raw === "" ? NaN : Number(raw);
-  const start = Number.isFinite(saved) ? Math.max(0, Math.min(100, Math.round(saved))) : 19;
-  slider.value = String(start);
-  setHitAmount(start, num);
-  slider.addEventListener("input", () => {
-    const value = Number(slider.value);
-    setHitAmount(value, num);
-    localStorage.setItem("maluca-golpe2", String(value));
-  });
-}
-
-function setHitAmount(value, num) {
-  hitAmount = value / 100;
-  num.textContent = String(value);
-}
-
 const sparkCanvas = document.getElementById("sparks");
 const sparkCtx = sparkCanvas.getContext("2d");
 const sparks = [];
 
-function bindSpark() {
-  document.getElementById("spark").addEventListener("click", () => {
-    sparks.push({
-      x: Math.random(),
-      y: Math.random(),
-      radius: 18 + Math.random() * 22,
-      life: 0.45 + Math.random() * 0.35,
-      age: 0,
-    });
+function addSpark() {
+  sparks.push({
+    x: Math.random(),
+    y: Math.random(),
+    radius: 18 + Math.random() * 22,
+    life: 0.45 + Math.random() * 0.35,
+    age: 0,
   });
 }
 
@@ -451,13 +428,12 @@ function followVolume(dt) {
 
 function songLine() {
   if (songNote) return songNote;
-  const magnitude = Math.round(hitAmount * 100);
-  const hitWord = sim.hit < 0.08 ? "quieto" : sim.hit < 0.28 ? "empuja" : "seco";
-  if (!songName) return `Golpe ${magnitude}, arriba a la derecha. Ese número es el que me dices.`;
+  if (!songName) return "B enciende una luz. L: el volumen engruesa, los agudos lloran y el golpe empuja.";
   const ear = sim.listen ? "sí escucha" : "no escucha";
   const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
   const cry = heardHighs < 0.22 ? "quietos" : heardHighs < 0.55 ? "nerviosos" : "llanto";
-  return `${songName} — golpe ${magnitude}. Volumen ${loud}, agudos ${cry}, golpe ${hitWord}. L: ${ear}.`;
+  const hitWord = sim.hit < 0.08 ? "quieto" : "empuja";
+  return `${songName}. Volumen ${loud}, agudos ${cry}, golpe ${hitWord}. L: ${ear}. B: una luz.`;
 }
 
 function hudHtml() {
@@ -477,7 +453,7 @@ function hudHtml() {
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
     <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
-    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · L volumen · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
+    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · L volumen · B una luz · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
   `;
 }
 
