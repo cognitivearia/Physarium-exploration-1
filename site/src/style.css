@@ -90,3 +90,35 @@ body,
 #hud.hidden {
   display: none;
 }
+
+#song {
+  position: fixed;
+  right: 0.9rem;
+  bottom: 0.9rem;
+  z-index: 4;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.45rem 0.6rem;
+  background: #b6a27a;
+  color: #16110c;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  transform: rotate(1.2deg);
+  border: 1px solid #241910;
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.45);
+}
+
+#song input {
+  display: none;
+}
+
+#song label,
+#song button {
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
+}

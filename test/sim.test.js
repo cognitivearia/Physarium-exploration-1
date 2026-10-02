@@ -135,6 +135,22 @@ test("cambiar de estado borra el olor y deja el trazo casi vacío", () => {
   assert.notEqual(sim.moldH[0], before);
 });
 
+test("si el volumen está alto, el trazo del moho ocupa más", () => {
+  function cover(pulse) {
+    const sim = createSim({ count: 0, moldCount: 60, seed: 21 });
+    sim.listen = true;
+    sim.pulse = pulse;
+    sim.figureKeep = 0.99;
+    for (let i = 0; i < 30; i++) step(sim, dt);
+    let cells = 0;
+    for (const value of sim.figure) if (value >= 0.75) cells += 1;
+    return cells;
+  }
+  const quiet = cover(0);
+  const loud = cover(1);
+  assert.ok(loud > quiet, `quiet ${quiet} loud ${loud}`);
+});
+
 test("el clic abre un hueco en la mancha", () => {
   const sim = createSim({ count: 0, moldCount: 0, seed: 11 });
   sim.hand.on = true;

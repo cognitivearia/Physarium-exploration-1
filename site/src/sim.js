@@ -92,6 +92,8 @@ export function createSim(options = {}) {
     rotationSpeed: 3.6,
     deposit: 0.03,
     agrio: false,
+    listen: false,
+    pulse: 0,
     fieldSeed: seed >>> 0,
     rng: seed >>> 0,
     hand: { on: false, x: 8, y: 4.5, repel: false, radius: 1.75 },
@@ -311,7 +313,9 @@ function stepMold(sim, dt) {
   const invW = sim.invW;
   const invH = sim.invH;
   const px = sim.w / cols;
-  const ink = point.ink * frames;
+  const loud = sim.listen ? Math.min(1, Math.max(0, sim.pulse || 0)) : 0;
+  const ink = point.ink * frames * (sim.listen ? 0.7 + loud * 0.9 : 1);
+  const drawAdd = 0.72 + loud * 0.85;
   const repel = sim.hand.on && sim.hand.repel;
   const handX = sim.hand.x;
   const handY = sim.hand.y;
@@ -370,7 +374,7 @@ function stepMold(sim, dt) {
     const cell = cellOf(x, y);
     const scent = trail[cell] + ink;
     trail[cell] = scent > 1.4 ? 1.4 : scent;
-    const drawn = figure[cell] + 0.72;
+    const drawn = figure[cell] + drawAdd;
     figure[cell] = drawn > 1.6 ? 1.6 : drawn;
     xs[i] = x;
     ys[i] = y;

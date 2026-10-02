@@ -86,6 +86,7 @@ window.addEventListener("pointerleave", () => {
   sim.hand.repel = false;
 });
 window.addEventListener("blur", () => held.clear());
+bindSong();
 
 requestAnimationFrame(frame);
 
@@ -98,6 +99,7 @@ function frame() {
     noiseDirty = false;
   }
   step(sim, dt);
+  followVolume(dt);
   agrioMix += ((sim.agrio ? 1 : 0) - agrioMix) * Math.min(1, dt * 3.5);
   writeTrail();
   updatePieces();
@@ -138,6 +140,7 @@ function onKeyDown(event) {
   if (key === "c" && !event.repeat) clearTrail(sim);
   if (key === "h" && !event.repeat) hud.classList.toggle("hidden");
   if (key === "f" && !event.repeat) toggleFullscreen();
+  if (key === "l" && !event.repeat) sim.listen = !sim.listen;
   if ("1234".includes(key) && !event.repeat) setMoldPoint(sim, Number(key) - 1);
   if (key === "arrowright" && !event.repeat) {
     event.preventDefault();
@@ -182,7 +185,9 @@ function writeTrail() {
   const figure = sim.figure;
   for (let i = 0; i < figure.length; i++) {
     const value = figure[i];
-    const shown = value < 0.75 ? 0 : Math.min(1, (value - 0.75) * 2.8);
+    const loud = sim.listen ? Math.min(1, Math.max(0, sim.pulse || 0)) : 0;
+    const gate = sim.listen ? 0.9 - loud * 0.55 : 0.75;
+    const shown = value < gate ? 0 : Math.min(1, (value - gate) * 2.8);
     const pixel = i * 4;
     const grease = 8 + (1 - shown) * 10;
     const r = grease * 1.2;
@@ -238,6 +243,82 @@ function drawGrain() {
   grainCtx.putImageData(grainImage, 0, 0);
 }
 
+const audio = new Audio();
+let audioCtx = null;
+let analyser = null;
+let wave = null;
+let songName = "";
+
+function bindSong() {
+  const file = document.getElementById("file");
+  const play = document.getElementById("play");
+  file.addEventListener("change", () => {
+    const chosen = file.files && file.files[0];
+    if (!chosen) return;
+    if (audio.src) URL.revokeObjectURL(audio.src);
+    audio.src = URL.createObjectURL(chosen);
+    songName = chosen.name.replace(/\.[^.]+$/, "");
+    sim.listen = true;
+    play.hidden = false;
+    play.textContent = "pausa";
+    hookAudio();
+    audio.play();
+  });
+  play.addEventListener("click", () => {
+    if (!audio.src) return;
+    if (audio.paused) {
+      hookAudio();
+      audio.play();
+      play.textContent = "pausa";
+    } else {
+      audio.pause();
+      play.textContent = "sigue";
+    }
+  });
+}
+
+function hookAudio() {
+  if (audioCtx) {
+    audioCtx.resume();
+    return;
+  }
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return;
+  audioCtx = new Ctx();
+  const source = audioCtx.createMediaElementSource(audio);
+  analyser = audioCtx.createAnalyser();
+  analyser.fftSize = 512;
+  source.connect(analyser);
+  analyser.connect(audioCtx.destination);
+  wave = new Uint8Array(analyser.fftSize);
+}
+
+function readLoudness() {
+  if (!sim.listen || !analyser || audio.paused) return 0;
+  analyser.getByteTimeDomainData(wave);
+  let sum = 0;
+  for (let i = 0; i < wave.length; i++) {
+    const sample = (wave[i] - 128) / 128;
+    sum += sample * sample;
+  }
+  const rms = Math.sqrt(sum / wave.length);
+  if (rms < 0.015) return 0;
+  return Math.min(1, Math.pow(rms * 4.5, 0.8));
+}
+
+function followVolume(dt) {
+  const target = readLoudness();
+  const follow = target > sim.pulse ? 12 : 5;
+  sim.pulse += (target - sim.pulse) * Math.min(1, dt * follow);
+}
+
+function songLine() {
+  if (!songName) return "Carga la canción en la esquina. L decide si el volumen engruesa el moho.";
+  const ear = sim.listen ? "sí escucha" : "no escucha";
+  const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
+  return `${songName} — volumen ${loud}. L: ${ear}. La mano sigue mandando.`;
+}
+
 function hudHtml() {
   const look = sim.inspect;
   const scaleWord =
@@ -246,7 +327,7 @@ function hudHtml() {
     sim.figureKeep > 0.985 ? "el trazo se queda" : sim.figureKeep > 0.97 ? "el trazo dura" : "el trazo se suelta";
   return `
     <p class="title">MALUCA — recortes</p>
-    <p>La canción va en otra ventana. Este instrumento no la escucha.</p>
+    <p>${songLine()}</p>
     <p>Estado ${MOLD_POINTS[sim.moldPoint].name} — flechas o 1 red · 2 nudos · 3 cordones · 4 ramas</p>
     <p>La mano hace crecer el moho. El clic lo aparta.</p>
     <p>Campo ${word(sim.flowWeight)} (${sim.flowWeight.toFixed(2)}) — las curvas del recuerdo</p>
@@ -255,7 +336,7 @@ function hudHtml() {
     <p>Grupo ${word(sim.flockWeight)} (${sim.flockWeight.toFixed(2)}) — radio ${sim.perception.toFixed(2)}</p>
     <p>Agrio ${sim.agrio ? "sí: la copia se quiebra y se pone violeta" : "no: sigue el polvo y el ladrillo"}</p>
     <p class="see">${look ? describe(look) : ""}</p>
-    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
+    <p class="keys">Mantén: Q/A campo · T/G escala · W/S pegamento · E/D grupo<br>Toques: flechas o 1–4 estado · L volumen · Z agrio · R otro campo · C borrar · clic aparta · F pantalla · H ocultar</p>
   `;
 }
 

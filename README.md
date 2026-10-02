@@ -2,7 +2,9 @@
 
 Instrumento visual para interpretar en vivo [MALUCA](https://www.youtube.com/watch?v=2mUFcVPyg28), de WEED420. Corre en el navegador con three.js.
 
-Hay dos poblaciones y ningún jefe. El moho son muchas partículas entre la hoja y los recortes. Cada una huele tres puntos, gira hacia el más fuerte y deja olor. Lo que se ve no es ese olor: es el trazo donde están ahora, negro y definido. Con las flechas, o con 1–4, cambias el estado y la figura se arma de otro modo: red, nudos, cordones o ramas. Los recortes son menos, para dejar sitio al moho. La música suena en otra ventana.
+Hay dos poblaciones y ningún jefe. El moho son muchas partículas entre la hoja y los recortes. Cada una huele tres puntos, gira hacia el más fuerte y deja olor. Lo que se ve no es ese olor: es el trazo donde están ahora, negro y definido. Con las flechas, o con 1–4, cambias el estado y la figura se arma de otro modo: red, nudos, cordones o ramas. Los recortes son menos, para dejar sitio al moho.
+
+La canción se carga desde tu computadora, con el botón de la esquina. No va en el repositorio. `L` decide si el volumen engruesa el moho. Apagado, la figura se queda como está. La mano, el estado y el campo siguen siendo tuyos: el volumen no elige la figura.
 
 ## Cómo abrirlo
 
@@ -30,6 +32,8 @@ Cuando el cambio llega a la rama `main`, GitHub construye el sitio y actualiza e
 | W / S | Pegamento. Cuánto siguen los recortes la mancha, y si esa mancha se queda. |
 | E / D | Grupo. También agranda o achica el radio: a quién alcanzan a ver. |
 | Flechas o 1 / 2 / 3 / 4 | Estado del moho. La figura anterior se suelta y nace la nueva: red, nudos, cordones o ramas. |
+| Cargar canción | Abre un audio de tu computadora y lo suena. No se guarda en el proyecto. |
+| L | Enciende o apaga la escucha. Si está encendida, el volumen engruesa el trazo. |
 | Z | Agrio. Los ángulos se quiebran cada 45° y la copia se pone violeta. |
 | Ratón | Sin clic, la mano alimenta el moho y dobla el campo a su alrededor. |
 | Clic | Abre un hueco en la mancha. El campo cercano apunta hacia afuera. |
