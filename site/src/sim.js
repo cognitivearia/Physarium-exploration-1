@@ -95,6 +95,7 @@ export function createSim(options = {}) {
     listen: false,
     pulse: 0,
     highs: 0,
+    hit: 0,
     fieldSeed: seed >>> 0,
     rng: seed >>> 0,
     hand: { on: false, x: 8, y: 4.5, repel: false, radius: 1.75 },
@@ -299,6 +300,13 @@ export function moldGlance(sim, index, point = MOLD_POINTS[sim.moldPoint] || MOL
   return { stain, sd, sa, ra, md };
 }
 
+// Subida breve de energía. Un tono que se queda no cuenta: la resta da cero.
+export function lowOnset(energy, previous) {
+  const rise = Math.max(0, energy - previous);
+  if (rise < 0.045) return 0;
+  return Math.min(1, 1 - Math.exp(-rise * 16));
+}
+
 function stepMold(sim, dt) {
   const n = sim.moldCount;
   if (!n) return;
@@ -316,6 +324,8 @@ function stepMold(sim, dt) {
   const px = sim.w / cols;
   const loud = sim.listen ? Math.min(1, Math.max(0, sim.pulse || 0)) : 0;
   const cry = sim.listen ? Math.min(1, Math.max(0, sim.highs || 0)) : 0;
+  const hit = sim.listen ? Math.min(1, Math.max(0, sim.hit || 0)) : 0;
+  const lurch = 1 + hit * 4.5;
   const ink = point.ink * frames * (sim.listen ? 0.7 + loud * 0.9 : 1);
   const drawAdd = 0.72 + loud * 0.85;
   const shiver = cry * 2.8 * frames;
@@ -370,8 +380,8 @@ function stepMold(sim, dt) {
       const dist = Math.hypot(dx, dy);
       if (dist < radius && dist > 0.0001) heading = Math.atan2(dy, dx);
     }
-    x += Math.cos(heading) * md * frames;
-    y += Math.sin(heading) * md * frames;
+    x += Math.cos(heading) * md * frames * lurch;
+    y += Math.sin(heading) * md * frames * lurch;
     x %= worldW;
     if (x < 0) x += worldW;
     y %= worldH;
@@ -383,6 +393,12 @@ function stepMold(sim, dt) {
       trail[cell] = scent > 1.4 ? 1.4 : scent;
       const drawn = figure[cell] + drawAdd;
       figure[cell] = drawn > 1.6 ? 1.6 : drawn;
+      if (hit > 0.04) {
+        const reach = hit * px * 8;
+        const scar = cellOf(x + Math.cos(heading) * reach, y + Math.sin(heading) * reach);
+        const punched = figure[scar] + hit;
+        figure[scar] = punched > 1.6 ? 1.6 : punched;
+      }
       if (wobbleReach > px) {
         const side = (rand(sim) - 0.5) * wobbleReach;
         const wx = x + Math.cos(heading + 1.5708) * side;

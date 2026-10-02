@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { angleAt, countNeighbors, createSim, moldGlance, sampleTrail, setMoldPoint, step } from "../site/src/sim.js";
+import { angleAt, countNeighbors, createSim, lowOnset, moldGlance, sampleTrail, setMoldPoint, step } from "../site/src/sim.js";
 
 const dt = 1 / 60;
 
@@ -165,6 +165,34 @@ test("los agudos hacen temblar el rumbo del moho", () => {
     wander += Math.abs(sim.moldH[0] - before);
   }
   assert.ok(wander > 1.2, `wander ${wander}`);
+});
+
+test("un tono quieto no es golpe, una subida sí", () => {
+  assert.equal(lowOnset(0.4, 0.4), 0);
+  assert.equal(lowOnset(0.42, 0.4), 0);
+  assert.ok(lowOnset(0.7, 0.2) > 0.9, `onset ${lowOnset(0.7, 0.2)}`);
+});
+
+test("el golpe empuja la vena más lejos que el reposo", () => {
+  function travel(hit) {
+    const sim = createSim({ count: 0, moldCount: 1, seed: 3 });
+    sim.listen = true;
+    sim.hit = hit;
+    sim.moldX[0] = 8;
+    sim.moldY[0] = 4.5;
+    sim.moldH[0] = 0;
+    let dist = 0;
+    for (let i = 0; i < 8; i++) {
+      const x0 = sim.moldX[0];
+      const y0 = sim.moldY[0];
+      step(sim, dt);
+      dist += Math.hypot(sim.moldX[0] - x0, sim.moldY[0] - y0);
+    }
+    return dist;
+  }
+  const calm = travel(0);
+  const punched = travel(1);
+  assert.ok(punched > calm * 2, `calm ${calm} punched ${punched}`);
 });
 
 test("el clic abre un hueco en la mancha", () => {

@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MOLD_POINTS, PALETTE, clearTrail, createSim, rebuildField, reseedField, setMoldPoint, step } from "./sim.js";
+import { MOLD_POINTS, PALETTE, clearTrail, createSim, lowOnset, rebuildField, reseedField, setMoldPoint, step } from "./sim.js";
 
 const sim = createSim();
 linkPerformance(sim);
@@ -96,10 +96,13 @@ let wave = null;
 let spectrum = null;
 let songName = "";
 let songNote = "";
-let cryAmount = 0.4;
 let heardHighs = 0;
+let heardHit = 0;
+let prevLow = 0;
+let hitAmount = 0.4;
+const cryAmount = 0.18;
 bindSong();
-bindCry();
+bindHit();
 
 requestAnimationFrame(frame);
 
@@ -266,6 +269,8 @@ function bindSong() {
     audio.src = URL.createObjectURL(chosen);
     songName = chosen.name.replace(/\.[^.]+$/, "");
     songNote = "";
+    prevLow = 0;
+    heardHit = 0;
     sim.listen = true;
     play.hidden = false;
     play.textContent = "pausa";
@@ -284,23 +289,23 @@ function bindSong() {
   });
 }
 
-function bindCry() {
-  const slider = document.getElementById("cry");
-  const num = document.getElementById("cry-num");
-  const raw = localStorage.getItem("maluca-agudos");
+function bindHit() {
+  const slider = document.getElementById("hit");
+  const num = document.getElementById("hit-num");
+  const raw = localStorage.getItem("maluca-golpe");
   const saved = raw === null || raw === "" ? NaN : Number(raw);
   const start = Number.isFinite(saved) ? Math.max(0, Math.min(100, Math.round(saved))) : 40;
   slider.value = String(start);
-  setCryAmount(start, num);
+  setHitAmount(start, num);
   slider.addEventListener("input", () => {
     const value = Number(slider.value);
-    setCryAmount(value, num);
-    localStorage.setItem("maluca-agudos", String(value));
+    setHitAmount(value, num);
+    localStorage.setItem("maluca-golpe", String(value));
   });
 }
 
-function setCryAmount(value, num) {
-  cryAmount = value / 100;
+function setHitAmount(value, num) {
+  hitAmount = value / 100;
   num.textContent = String(value);
 }
 
@@ -349,7 +354,6 @@ function readLoudness() {
 
 function readHighs() {
   if (!sim.listen || !analyser || !spectrum || audio.paused) return 0;
-  analyser.getByteFrequencyData(spectrum);
   const rate = audioCtx.sampleRate || 44100;
   const binHz = rate / analyser.fftSize;
   const start = Math.min(spectrum.length - 2, Math.max(1, Math.floor(3200 / binHz)));
@@ -365,24 +369,44 @@ function readHighs() {
   return Math.min(1, 1 - Math.exp(-raw * 22));
 }
 
+function readHit() {
+  if (!sim.listen || !spectrum || audio.paused) return 0;
+  const rate = audioCtx.sampleRate || 44100;
+  const binHz = rate / analyser.fftSize;
+  const start = Math.min(spectrum.length - 2, Math.max(1, Math.floor(45 / binHz)));
+  const end = Math.min(spectrum.length - 1, Math.max(start + 1, Math.floor(420 / binHz)));
+  let sum = 0;
+  for (let i = start; i <= end; i++) sum += spectrum[i];
+  const energy = sum / ((end - start + 1) * 255);
+  const blow = lowOnset(energy, prevLow);
+  prevLow = energy;
+  return blow;
+}
+
 function followVolume(dt) {
   const target = readLoudness();
   const follow = target > sim.pulse ? 12 : 5;
   sim.pulse += (target - sim.pulse) * Math.min(1, dt * follow);
+  if (sim.listen && analyser && spectrum && !audio.paused) analyser.getByteFrequencyData(spectrum);
   const sharp = readHighs();
   const followSharp = sharp > heardHighs ? 28 : 10;
   heardHighs += (sharp - heardHighs) * Math.min(1, dt * followSharp);
   sim.highs = heardHighs * cryAmount;
+  const blow = readHit();
+  if (blow > heardHit) heardHit = blow;
+  else heardHit += (blow - heardHit) * Math.min(1, dt * 14);
+  sim.hit = heardHit * hitAmount;
 }
 
 function songLine() {
   if (songNote) return songNote;
-  const magnitude = Math.round(cryAmount * 100);
-  if (!songName) return `Magnitud ${magnitude}, arriba a la derecha. Ese número es el que me dices. L: el volumen engruesa y los agudos hacen llorar la vena.`;
+  const magnitude = Math.round(hitAmount * 100);
+  const hitWord = sim.hit < 0.08 ? "quieto" : sim.hit < 0.28 ? "empuja" : "seco";
+  if (!songName) return `Golpe ${magnitude}, arriba a la derecha. Ese número es el que me dices.`;
   const ear = sim.listen ? "sí escucha" : "no escucha";
   const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
-  const cry = sim.highs < 0.22 ? "quietos" : sim.highs < 0.55 ? "nerviosos" : "llanto";
-  return `${songName} — magnitud ${magnitude}. Volumen ${loud}, agudos ${cry}. L: ${ear}.`;
+  const cry = heardHighs < 0.22 ? "quietos" : heardHighs < 0.55 ? "nerviosos" : "llanto";
+  return `${songName} — golpe ${magnitude}. Volumen ${loud}, agudos ${cry}, golpe ${hitWord}. L: ${ear}.`;
 }
 
 function hudHtml() {
