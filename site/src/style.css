@@ -93,32 +93,46 @@ body,
 
 #song {
   position: fixed;
-  right: 0.9rem;
-  bottom: 0.9rem;
-  z-index: 4;
+  top: calc(0.7rem + env(safe-area-inset-top));
+  right: calc(0.7rem + env(safe-area-inset-right));
+  z-index: 6;
   display: flex;
-  gap: 0.4rem;
+  gap: 0.7rem;
   align-items: center;
-  padding: 0.45rem 0.6rem;
+  padding: 0.35rem 0.45rem;
   background: #b6a27a;
   color: #16110c;
   font-family: Arial, Helvetica, sans-serif;
-  font-size: 14px;
-  transform: rotate(1.2deg);
+  font-size: 17px;
   border: 1px solid #241910;
   box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.45);
 }
 
-#song input {
-  display: none;
+#song label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.7rem;
+  cursor: pointer;
 }
 
-#song label,
+#song input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  font-size: 16px;
+  cursor: pointer;
+}
+
 #song button {
+  min-height: 44px;
+  padding: 0 0.55rem;
   cursor: pointer;
   color: inherit;
   font: inherit;
   background: transparent;
   border: 0;
-  padding: 0;
 }

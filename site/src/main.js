@@ -244,10 +244,13 @@ function drawGrain() {
 }
 
 const audio = new Audio();
+audio.setAttribute("playsinline", "true");
+audio.preload = "auto";
 let audioCtx = null;
 let analyser = null;
 let wave = null;
 let songName = "";
+let songNote = "";
 
 function bindSong() {
   const file = document.getElementById("file");
@@ -258,22 +261,35 @@ function bindSong() {
     if (audio.src) URL.revokeObjectURL(audio.src);
     audio.src = URL.createObjectURL(chosen);
     songName = chosen.name.replace(/\.[^.]+$/, "");
+    songNote = "";
     sim.listen = true;
     play.hidden = false;
     play.textContent = "pausa";
     hookAudio();
-    audio.play();
+    startSong(play);
   });
   play.addEventListener("click", () => {
     if (!audio.src) return;
     if (audio.paused) {
       hookAudio();
-      audio.play();
-      play.textContent = "pausa";
+      startSong(play);
     } else {
       audio.pause();
       play.textContent = "sigue";
     }
+  });
+}
+
+function startSong(play) {
+  const pending = audio.play();
+  if (!pending) return;
+  pending.then(() => {
+    songNote = "";
+    play.textContent = "pausa";
+  }).catch(() => {
+    songNote = "Toca sigue para que el iPad deje sonar.";
+    play.hidden = false;
+    play.textContent = "sigue";
   });
 }
 
@@ -313,7 +329,8 @@ function followVolume(dt) {
 }
 
 function songLine() {
-  if (!songName) return "Carga la canción en la esquina. L decide si el volumen engruesa el moho.";
+  if (songNote) return songNote;
+  if (!songName) return "Arriba a la derecha: elegir mp3, en Archivos. L decide si el volumen engruesa el moho.";
   const ear = sim.listen ? "sí escucha" : "no escucha";
   const loud = sim.pulse < 0.18 ? "bajo" : sim.pulse < 0.55 ? "medio" : "alto";
   return `${songName} — volumen ${loud}. L: ${ear}. La mano sigue mandando.`;
