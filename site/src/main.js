@@ -107,6 +107,7 @@ let wave = null;
 let spectrum = null;
 let songName = "";
 let songNote = "";
+let songToken = 0;
 let heardHighs = 0;
 let heardHit = 0;
 let prevLow = 0;
@@ -294,17 +295,7 @@ function bindSong() {
   file.addEventListener("change", () => {
     const chosen = file.files && file.files[0];
     if (!chosen) return;
-    if (audio.src) URL.revokeObjectURL(audio.src);
-    audio.src = URL.createObjectURL(chosen);
-    songName = chosen.name.replace(/\.[^.]+$/, "");
-    songNote = "";
-    prevLow = 0;
-    heardHit = 0;
-    sim.listen = true;
-    play.hidden = false;
-    play.textContent = "pausa";
-    hookAudio();
-    startSong(play);
+    armSong(URL.createObjectURL(chosen), chosen.name.replace(/\.[^.]+$/, ""), play);
   });
   play.addEventListener("click", () => {
     if (!audio.src) return;
@@ -316,6 +307,32 @@ function bindSong() {
       play.textContent = "sigue";
     }
   });
+  armSong(`${import.meta.env.BASE_URL}audio/maluca.mp3`, "MALUCA", play);
+}
+
+function armSong(src, name, play) {
+  const token = ++songToken;
+  const previous = audio.src;
+  audio.addEventListener("loadedmetadata", () => {
+    if (token !== songToken) return;
+    songName = name;
+    songNote = "";
+    prevLow = 0;
+    heardHit = 0;
+    sim.listen = true;
+    play.hidden = false;
+    play.textContent = "sigue";
+    startSong(play);
+  }, { once: true });
+  audio.addEventListener("error", () => {
+    if (token !== songToken) return;
+    songName = "";
+    songNote = "No encuentro MALUCA junto a la página.";
+    sim.listen = false;
+    play.hidden = true;
+  }, { once: true });
+  audio.src = src;
+  if (previous.startsWith("blob:") && previous !== src) URL.revokeObjectURL(previous);
 }
 
 const sparkCanvas = document.getElementById("sparks");
@@ -372,7 +389,7 @@ function startSong(play) {
     songNote = "";
     play.textContent = "pausa";
   }).catch(() => {
-    songNote = "Toca sigue para que el iPad deje sonar.";
+    songNote = "Toca sigue para que suene.";
     play.hidden = false;
     play.textContent = "sigue";
   });
