@@ -338,8 +338,8 @@ function readHighs() {
     if (spectrum[i] > peak) peak = spectrum[i];
   }
   const avg = sum / ((end - start + 1) * 255);
-  const hot = Math.max(avg, (peak / 255) * 0.9);
-  return Math.min(1, Math.pow(hot * 2.4, 0.5));
+  const raw = Math.max(avg, (peak / 255) * 0.85);
+  return Math.min(1, 1 - Math.exp(-raw * 22));
 }
 
 function followVolume(dt) {
@@ -347,7 +347,7 @@ function followVolume(dt) {
   const follow = target > sim.pulse ? 12 : 5;
   sim.pulse += (target - sim.pulse) * Math.min(1, dt * follow);
   const sharp = readHighs();
-  const followSharp = sharp > sim.highs ? 18 : 8;
+  const followSharp = sharp > sim.highs ? 28 : 10;
   sim.highs += (sharp - sim.highs) * Math.min(1, dt * followSharp);
 }
 

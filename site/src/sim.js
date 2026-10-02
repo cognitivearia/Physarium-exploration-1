@@ -318,8 +318,8 @@ function stepMold(sim, dt) {
   const cry = sim.listen ? Math.min(1, Math.max(0, sim.highs || 0)) : 0;
   const ink = point.ink * frames * (sim.listen ? 0.7 + loud * 0.9 : 1);
   const drawAdd = 0.72 + loud * 0.85;
-  const shiver = cry * 1.45 * frames;
-  const wobbleReach = cry * px * 7;
+  const shiver = cry * 2.8 * frames;
+  const wobbleReach = cry * px * 13;
   const repel = sim.hand.on && sim.hand.repel;
   const handX = sim.hand.x;
   const handY = sim.hand.y;
@@ -348,7 +348,7 @@ function stepMold(sim, dt) {
     const sinH = Math.sin(heading);
     const stain = Math.min(1, trail[cellOf(x + cosH * aheadPx, y + sinH * aheadPx)]);
     const sd = Math.max(px, (sd0 + sd1 * Math.pow(stain, sdP)) * px);
-    const sa = Math.max(0.05, sa0 + sa1 * Math.pow(stain, saP)) * (1 + cry * 1.15);
+    const sa = Math.max(0.05, sa0 + sa1 * Math.pow(stain, saP)) * (1 + cry * 2.1);
     const ra = Math.max(0.02, ra0 + ra1 * Math.pow(stain, raP));
     const md = Math.max(px * 0.25, (md0 + md1 * Math.pow(stain, mdP)) * px);
     const center = trail[cellOf(x + cosH * sd, y + sinH * sd)];
@@ -376,7 +376,7 @@ function stepMold(sim, dt) {
     if (x < 0) x += worldW;
     y %= worldH;
     if (y < 0) y += worldH;
-    const gasp = cry > 0.28 && rand(sim) < cry * 0.4;
+    const gasp = cry > 0.16 && rand(sim) < cry * 0.62;
     if (!gasp) {
       const cell = cellOf(x, y);
       const scent = trail[cell] + ink;
